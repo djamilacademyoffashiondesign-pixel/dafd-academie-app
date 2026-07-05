@@ -372,9 +372,9 @@ td.num,th.num{text-align:right}
     <section id="viewFinances" class="hidden">
       <div class="pill-tabs">
         <button data-fintab="paiements" class="active">Paiements</button>
-        <button data-fintab="depenses">Dépenses</button>
         <button data-fintab="soldes">Soldes élèves</button>
-        <button data-fintab="rapport">Rapport</button>
+        <button data-fintab="depenses" id="pillDepenses">Dépenses</button>
+        <button data-fintab="rapport" id="pillRapport">Rapport</button>
       </div>
       <div id="finPaiements">
         <div class="card">
@@ -544,6 +544,31 @@ function totalPayeEleve(eleveId){
   return paiements.filter(p => p.eleveId === eleveId).reduce((s,p) => s + (Number(p.montant)||0), 0);
 }
 
+/* ---------- WhatsApp (reçus & relances) ---------- */
+function telWa(t){
+  t = String(t||"").replace(/[^0-9]/g,"");
+  if(!t) return "";
+  if(t.startsWith("00")) t = t.slice(2);
+  if(t.length <= 7) t = "220" + t;          // numéro gambien local
+  return t;
+}
+function waOpen(phone, text){
+  const p = telWa(phone);
+  if(!p){ toast("Pas de numéro WhatsApp pour cet élève."); return; }
+  window.open("https://wa.me/" + p + "?text=" + encodeURIComponent(text), "_blank");
+}
+function relancer(eleveId){
+  const e = eleves.find(x => x.id === eleveId);
+  if(!e) return;
+  const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(eleveId);
+  const msg = "🧵 DAFD Académie — Rappel de scolarité\n\n"
+    + "Bonjour " + (e.prenom||"") + ",\n"
+    + "Il reste " + money(reste) + " à régler pour votre formation.\n"
+    + "Merci de passer à l'académie pour régulariser.\n\n"
+    + "Djamil Academy of Fashion Design — Bakau New Town";
+  waOpen(e.telephone, msg);
+}
+
 /* ---------- Authentification ---------- */
 $("btnLogin").addEventListener("click", doLogin);
 $("loginPwd").addEventListener("keydown", e => { if(e.key === "Enter") doLogin(); });
@@ -603,11 +628,10 @@ async function resolveRole(){
 
 function applyRoleUI(){
   const fin = role === "directeur";
-  $("navFinances").classList.toggle("hidden", !fin);
   $("dashFinCard").classList.toggle("hidden", !fin);
-  $("dashRetardsCard").classList.toggle("hidden", !fin);
   $("rolesCard").classList.toggle("hidden", !fin);
-  $("accountInfo").textContent = "Connecté : " + (currentUser.email||"") + " — rôle : " + (fin ? "Directeur (accès complet)" : "Manager (élèves & notes)");
+  $("pillRapport").classList.toggle("hidden", !fin);
+  $("accountInfo").textContent = "Connecté : " + (currentUser.email||"") + " — rôle : " + (fin ? "Directeur (accès complet)" : "Manager-caissier (encaissements et dépenses du jour — pas de rapports ni salaires)");
 }
 
 $("btnLogout").addEventListener("click", () => auth.signOut());
@@ -634,17 +658,17 @@ function startData(){
     renderMatieresSelect();
     $("matieresList").value = matieres.join("\n");
   }));
+  unsubs.push(db.collection("paiements").onSnapshot(s => {
+    paiements = s.docs.map(d => ({id:d.id, ...d.data()}));
+    paiements.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
+    renderAll();
+  }));
+  unsubs.push(db.collection("depenses").onSnapshot(s => {
+    depenses = s.docs.map(d => ({id:d.id, ...d.data()}));
+    depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
+    renderAll();
+  }));
   if(role === "directeur"){
-    unsubs.push(db.collection("paiements").onSnapshot(s => {
-      paiements = s.docs.map(d => ({id:d.id, ...d.data()}));
-      paiements.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
-      renderAll();
-    }));
-    unsubs.push(db.collection("depenses").onSnapshot(s => {
-      depenses = s.docs.map(d => ({id:d.id, ...d.data()}));
-      depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
-      renderAll();
-    }));
     $("directeursList").value = directeurs.join("\n");
   }
 }
@@ -719,10 +743,10 @@ function renderDash(){
   if(role === "directeur"){
     const mois = todayISO().slice(0,7);
     const encMois = paiements.filter(p => String(p.date||"").slice(0,7) === mois).reduce((s,p) => s+(Number(p.montant)||0),0);
-    const retards = actifs.filter(e => (Number(e.fraisTotal)||0) - totalPayeEleve(e.id) > 0);
-    stats += '<div class="stat ok"><div class="num" style="font-size:20px">'+money(encMois)+'</div><div class="lbl">Encaissé ce mois</div></div>'
-      + '<div class="stat alert"><div class="num">'+retards.length+'</div><div class="lbl">Élèves en retard</div></div>';
+    stats += '<div class="stat ok"><div class="num" style="font-size:20px">'+money(encMois)+'</div><div class="lbl">Encaissé ce mois</div></div>';
   }
+  const retardsN = actifs.filter(e => (Number(e.fraisTotal)||0) - totalPayeEleve(e.id) > 0).length;
+  stats += '<div class="stat alert"><div class="num">'+retardsN+'</div><div class="lbl">Élèves en retard</div></div>';
   $("dashStats").innerHTML = stats;
 
   // Cohortes + tracker trimestres (signature)
@@ -753,19 +777,19 @@ function renderDash(){
       '<div class="list-item"><div class="li-main">Encaissements</div><div class="li-end money pos">'+money(enc)+'</div></div>'
       + '<div class="list-item"><div class="li-main">Dépenses</div><div class="li-end money neg">'+money(dep)+'</div></div>'
       + '<div class="list-item"><div class="li-main"><b>Solde du mois</b></div><div class="li-end money '+(solde>=0?"pos":"neg")+'">'+money(solde)+'</div></div>';
-
-    const retards = eleves.filter(e => e.statut === "actif").map(e => {
-      const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
-      return {e, reste};
-    }).filter(x => x.reste > 0).sort((a,b) => b.reste - a.reste);
-    $("dashRetards").innerHTML = retards.length
-      ? retards.slice(0,8).map(x =>
-          '<div class="list-item"><div class="avatar">'+initiales(x.e.nom,x.e.prenom)+'</div>'
-          + '<div class="li-main"><div class="li-title">'+esc(x.e.prenom)+' '+esc(x.e.nom)+'</div>'
-          + '<div class="li-sub">'+esc(cohorteNom(x.e.cohorteId))+'</div></div>'
-          + '<div class="li-end money neg">'+money(x.reste)+'</div></div>').join("")
-      : '<div class="empty">Tous les frais sont à jour 🎉</div>';
   }
+  const retards = eleves.filter(e => e.statut === "actif").map(e => {
+    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    return {e, reste};
+  }).filter(x => x.reste > 0).sort((a,b) => b.reste - a.reste);
+  $("dashRetards").innerHTML = retards.length
+    ? retards.slice(0,8).map(x =>
+        '<div class="list-item"><div class="avatar">'+initiales(x.e.nom,x.e.prenom)+'</div>'
+        + '<div class="li-main"><div class="li-title">'+esc(x.e.prenom)+' '+esc(x.e.nom)+'</div>'
+        + '<div class="li-sub">'+esc(cohorteNom(x.e.cohorteId))+'</div></div>'
+        + '<div class="li-end"><span class="money neg">'+money(x.reste)+'</span><br>'
+        + '<button class="linkbtn" onclick="relancer(\''+x.e.id+'\')">📲 Relancer</button></div></div>').join("")
+    : '<div class="empty">Tous les frais sont à jour 🎉</div>';
 }
 
 /* ---------- Élèves ---------- */
@@ -790,9 +814,7 @@ function renderEleves(){
   }
   $("listeEleves").innerHTML = list.map(e => {
     const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
-    const fin = role === "directeur"
-      ? (reste > 0 ? '<span class="badge retard">Reste '+money(reste)+'</span>' : '<span class="badge solde">Frais soldés</span>')
-      : "";
+    const fin = reste > 0 ? '<span class="badge retard">Reste '+money(reste)+'</span>' : '<span class="badge solde">Frais soldés</span>';
     return '<div class="list-item" onclick="openFiche(\''+e.id+'\')" style="cursor:pointer">'
       + '<div class="avatar">'+initiales(e.nom,e.prenom)+'</div>'
       + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
@@ -889,16 +911,16 @@ function openFiche(id){
   }).join("") || '<p class="muted">Pas encore de notes.</p>';
 
   let finHtml = "";
-  if(role === "directeur"){
-    finHtml = '<div class="section-title">Frais de scolarité</div>'
+  finHtml = '<div class="section-title">Frais de scolarité</div>'
       + '<div class="list-item"><div class="li-main">Total dû</div><div class="li-end money">'+money(e.fraisTotal)+'</div></div>'
       + '<div class="list-item"><div class="li-main">Payé</div><div class="li-end money pos">'+money(paye)+'</div></div>'
       + '<div class="list-item"><div class="li-main"><b>Reste</b></div><div class="li-end money '+(reste>0?"neg":"pos")+'">'+money(reste)+'</div></div>'
       + (mesPaiements.length ? mesPaiements.map(p =>
           '<div class="list-item"><div class="li-main"><div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+'</div></div>'
           + '<div class="li-end money pos">'+money(p.montant)+'</div></div>').join("") : "")
-      + '<div style="margin-top:10px"><button class="btn small gold" onclick="closeModal();openPaiementForm(\''+id+'\')">+ Paiement</button></div>';
-  }
+      + '<div style="margin-top:10px"><button class="btn small gold" onclick="closeModal();openPaiementForm(\''+id+'\')">+ Paiement</button> '
+      + (reste > 0 ? '<button class="btn small ghost" onclick="relancer(\''+id+'\')">📲 Relancer</button>' : '')
+      + '</div>';
 
   openModal(
     '<div class="close-row"><h2>'+esc(e.prenom)+' '+esc(e.nom)+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
@@ -1037,28 +1059,31 @@ $("btnAddDepense").addEventListener("click", openDepenseForm);
 $("rapportMois").addEventListener("change", renderRapport);
 
 function renderFinances(){
-  if(role !== "directeur") return;
-  // Paiements
+  const dir = role === "directeur";
+  // Paiements (suppression réservée au directeur)
   $("listePaiements").innerHTML = paiements.length
     ? paiements.slice(0,40).map(p => {
         const e = eleves.find(x => x.id === p.eleveId);
         return '<div class="list-item"><div class="li-main">'
           + '<div class="li-title">'+(e ? esc(e.prenom)+' '+esc(e.nom) : "Élève supprimé")+'</div>'
           + '<div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+(p.note?' · '+esc(p.note):'')+'</div></div>'
-          + '<div class="li-end"><span class="money pos">'+money(p.montant)+'</span><br>'
-          + '<button class="linkbtn" onclick="deletePaiement(\''+p.id+'\')">Suppr.</button></div></div>';
+          + '<div class="li-end"><span class="money pos">'+money(p.montant)+'</span>'
+          + (dir ? '<br><button class="linkbtn" onclick="deletePaiement(\''+p.id+'\')">Suppr.</button>' : '')
+          + '</div></div>';
       }).join("")
     : '<div class="empty">Aucun paiement enregistré.</div>';
-  // Dépenses
-  $("listeDepenses").innerHTML = depenses.length
-    ? depenses.slice(0,40).map(d =>
+  // Dépenses : directeur = tout ; manager = uniquement ses propres saisies
+  const mesDep = dir ? depenses : depenses.filter(d => (d.enregistrePar||"") === (currentUser.email||""));
+  $("listeDepenses").innerHTML = mesDep.length
+    ? mesDep.slice(0,40).map(d =>
         '<div class="list-item"><div class="li-main">'
         + '<div class="li-title">'+esc(d.libelle)+'</div>'
         + '<div class="li-sub">'+fmtDate(d.date)+' · '+esc(d.categorie||"")+'</div></div>'
-        + '<div class="li-end"><span class="money neg">'+money(d.montant)+'</span><br>'
-        + '<button class="linkbtn" onclick="deleteDepense(\''+d.id+'\')">Suppr.</button></div></div>').join("")
+        + '<div class="li-end"><span class="money neg">'+money(d.montant)+'</span>'
+        + (dir ? '<br><button class="linkbtn" onclick="deleteDepense(\''+d.id+'\')">Suppr.</button>' : '')
+        + '</div></div>').join("")
     : '<div class="empty">Aucune dépense enregistrée.</div>';
-  // Soldes
+  // Soldes (visibles par le manager-caissier)
   const actifs = eleves.filter(e => e.statut === "actif" || e.statut === "preinscrit");
   $("listeSoldes").innerHTML = actifs.length
     ? actifs.map(e => {
@@ -1073,8 +1098,10 @@ function renderFinances(){
             : '<span class="badge solde">Soldé</span>')+'</div></div>';
       }).join("")
     : '<div class="empty">Aucun élève.</div>';
-  if(!$("rapportMois").value) $("rapportMois").value = todayISO().slice(0,7);
-  renderRapport();
+  if(dir){
+    if(!$("rapportMois").value) $("rapportMois").value = todayISO().slice(0,7);
+    renderRapport();
+  }
 }
 
 function renderRapport(){
@@ -1135,25 +1162,47 @@ async function savePaiement(){
   if(data.montant <= 0){ toast("Entrez un montant valide."); return; }
   if(!data.date){ toast("Choisissez la date du paiement."); return; }
   try{
+    const dejaPayeAvant = totalPayeEleve(data.eleveId);
     await db.collection("paiements").add(data);
-    closeModal();
+    const e = eleves.find(x => x.id === data.eleveId);
+    const total = e ? (Number(e.fraisTotal)||0) : 0;
+    const paye = dejaPayeAvant + data.montant;
+    const reste = total - paye;
+    const recu = "🧵 DAFD Académie — Reçu de paiement\n\n"
+      + "Élève : " + (e ? (e.prenom||"")+" "+(e.nom||"") : "") + "\n"
+      + "Montant reçu : " + money(data.montant) + " (" + data.mode + ")\n"
+      + "Date : " + fmtDate(data.date) + "\n"
+      + "Total payé : " + money(paye) + " / " + money(total) + "\n"
+      + (reste > 0 ? "Reste à payer : " + money(reste) : "✅ Scolarité entièrement soldée") + "\n\n"
+      + "Merci de votre confiance !\nDjamil Academy of Fashion Design — Bakau New Town";
+    openModal(
+      '<div class="close-row"><h2>Paiement enregistré ✓</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+      + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b>.'
+      + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Scolarité soldée 🎉') + '</p>'
+      + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(\'' + esc(e ? e.telephone||"" : "") + '\',' + JSON.stringify(recu).replace(/'/g,"&#39;") + ');closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
+      + '<div style="margin-top:10px"><button class="btn ghost" style="width:100%" onclick="closeModal()">Fermer sans envoyer</button></div>'
+    );
     toast("Paiement de " + money(data.montant) + " enregistré ✓");
   }catch(err){ toast("Erreur d'enregistrement du paiement."); }
 }
 
 async function deletePaiement(id){
+  if(role !== "directeur"){ toast("Seul le directeur peut supprimer un paiement."); return; }
   if(!confirm("Supprimer ce paiement ?")) return;
   try{ await db.collection("paiements").doc(id).delete(); toast("Paiement supprimé"); }
   catch(err){ toast("Erreur lors de la suppression."); }
 }
 
 function openDepenseForm(){
+  const cats = (role === "directeur"
+    ? ["Salaires","Matériel & tissus","Loyer","Électricité & eau","Internet & téléphone","Transport","Autres"]
+    : ["Matériel & tissus","Électricité & eau","Internet & téléphone","Transport","Autres"]);
   openModal(
     '<div class="close-row"><h2>Nouvelle dépense</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
     + '<label>Libellé</label><input id="dLibelle" placeholder="Ex : Tissu pour ateliers">'
     + '<label>Catégorie</label><select id="dCategorie">'
-    + '<option>Salaires</option><option>Matériel & tissus</option><option>Loyer</option>'
-    + '<option>Électricité & eau</option><option>Internet & téléphone</option><option>Transport</option><option>Autres</option></select>'
+    + cats.map(c => '<option>'+c+'</option>').join("")
+    + '</select>'
     + '<label>Montant (dalasis)</label><input type="number" id="dMontant" inputmode="numeric">'
     + '<label>Date</label><input type="date" id="dDate" value="'+todayISO()+'">'
     + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
@@ -1179,6 +1228,7 @@ async function saveDepense(){
 }
 
 async function deleteDepense(id){
+  if(role !== "directeur"){ toast("Seul le directeur peut supprimer une dépense."); return; }
   if(!confirm("Supprimer cette dépense ?")) return;
   try{ await db.collection("depenses").doc(id).delete(); toast("Dépense supprimée"); }
   catch(err){ toast("Erreur lors de la suppression."); }
