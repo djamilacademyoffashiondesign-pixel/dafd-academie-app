@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DAFD Académie — Gestion</title>
+<meta name="theme-color" content="#232E5C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --indigo:#232E5C;
+  --indigo-deep:#161D3F;
+  --indigo-soft:#3A4A8C;
+  --gold:#C6A24B;
+  --gold-soft:#E8D9AE;
+  --ecru:#F6F3EC;
+  --paper:#FFFFFF;
+  --ink:#1E2230;
+  --ink-soft:#5A607A;
+  --line:#E4DFD2;
+  --danger:#B4432F;
+  --success:#2F7D4F;
+  --warn:#B07C1F;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(22,29,63,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Karla',sans-serif;
+  background:var(--ecru);
+  color:var(--ink);
+  min-height:100vh;
+  font-size:16px;
+}
+h1,h2,h3,.display{font-family:'Marcellus',serif;font-weight:400;letter-spacing:.3px}
+button{font-family:'Karla',sans-serif;cursor:pointer;border:none;background:none;font-size:15px}
+input,select,textarea{
+  font-family:'Karla',sans-serif;font-size:16px;
+  width:100%;padding:11px 12px;border:1px solid var(--line);
+  border-radius:10px;background:var(--paper);color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold)}
+label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ---------- Login ---------- */
+#viewLogin{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,var(--indigo-deep) 0%,var(--indigo) 70%);
+  padding:24px;
+}
+.login-card{
+  width:100%;max-width:380px;background:var(--paper);border-radius:18px;
+  padding:34px 26px;box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+.login-brand{text-align:center;margin-bottom:22px}
+.login-brand .monogram{
+  width:74px;height:74px;border-radius:50%;margin:0 auto 12px;
+  background:var(--indigo);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Marcellus',serif;font-size:26px;
+  border:2px solid var(--gold);
+}
+.login-brand h1{font-size:24px;color:var(--indigo)}
+.login-brand p{font-size:13px;color:var(--ink-soft);margin-top:4px;letter-spacing:1.5px;text-transform:uppercase}
+.stitch{
+  height:0;border-top:2px dashed var(--gold);margin:18px 0;position:relative;
+}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 18px;border-radius:10px;font-weight:700;font-size:15px;
+  background:var(--indigo);color:#fff;width:100%;
+}
+.btn:active{transform:scale(.98)}
+.btn.gold{background:var(--gold);color:var(--indigo-deep)}
+.btn.ghost{background:transparent;color:var(--indigo);border:1.5px solid var(--indigo);width:auto}
+.btn.small{width:auto;padding:8px 14px;font-size:13.5px}
+.btn.danger{background:var(--danger)}
+.login-error{color:var(--danger);font-size:14px;margin-top:12px;text-align:center;min-height:18px}
+
+/* ---------- Shell ---------- */
+#appShell{display:none;min-height:100vh;padding-bottom:76px}
+header.appbar{
+  background:var(--indigo);color:#fff;
+  padding:14px 16px 12px;
+  border-bottom:3px solid var(--gold);
+  position:sticky;top:0;z-index:40;
+}
+.appbar-row{display:flex;align-items:center;justify-content:space-between;max-width:960px;margin:0 auto}
+.appbar h1{font-size:19px;color:#fff}
+.appbar .sub{font-size:11.5px;color:var(--gold-soft);letter-spacing:1.2px;text-transform:uppercase}
+.userchip{
+  font-size:12px;background:rgba(255,255,255,.12);padding:6px 11px;border-radius:20px;
+  color:#fff;display:flex;align-items:center;gap:6px;
+}
+.userchip .role{color:var(--gold);font-weight:700}
+main{max-width:960px;margin:0 auto;padding:16px}
+
+/* ---------- Bottom nav ---------- */
+nav.bottom{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--paper);border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 16px rgba(22,29,63,.07);
+}
+nav.bottom button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:11px;font-weight:600;color:var(--ink-soft);padding:6px 2px;border-radius:10px;
+}
+nav.bottom button .ico{font-size:20px;line-height:1}
+nav.bottom button.active{color:var(--indigo)}
+nav.bottom button.active .ico{transform:translateY(-1px)}
+nav.bottom button.active::after{
+  content:"";width:18px;height:3px;border-radius:2px;background:var(--gold);margin-top:2px;
+}
+
+/* ---------- Cards & layout ---------- */
+.card{
+  background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:16px;margin-bottom:14px;border:1px solid rgba(228,223,210,.6);
+}
+.card h2{font-size:18px;color:var(--indigo);margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:560px){.grid3{grid-template-columns:1fr 1fr}}
+.stat{
+  background:var(--paper);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);
+  border-top:3px solid var(--gold);
+}
+.stat .num{font-family:'Marcellus',serif;font-size:26px;color:var(--indigo)}
+.stat .lbl{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.stat.alert{border-top-color:var(--danger)}
+.stat.ok{border-top-color:var(--success)}
+
+/* ---------- Lists ---------- */
+.list-item{
+  display:flex;align-items:center;gap:12px;padding:12px 4px;
+  border-bottom:1px solid var(--line);
+}
+.list-item:last-child{border-bottom:none}
+.avatar{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:var(--indigo);color:var(--gold);font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.photo-row{display:flex;align-items:center;gap:14px;margin:6px 0 12px}
+.photo-preview{
+  width:86px;height:86px;border-radius:12px;flex-shrink:0;overflow:hidden;
+  background:var(--indigo);color:var(--gold);font-weight:700;font-size:26px;
+  display:flex;align-items:center;justify-content:center;border:2px solid var(--gold);
+}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-fiche{
+  width:96px;height:96px;border-radius:12px;object-fit:cover;
+  border:2px solid var(--gold);display:block;margin:0 auto 10px;
+}
+.photo-bulletin{
+  width:76px;height:76px;border-radius:8px;object-fit:cover;
+  border:1.5px solid #C6A24B;
+}
+.li-main{flex:1;min-width:0}
+.li-title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+.li-end{text-align:right;flex-shrink:0}
+.badge{
+  display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;
+  text-transform:uppercase;letter-spacing:.4px;
+}
+.badge.actif{background:#E4EFE7;color:var(--success)}
+.badge.preinscrit{background:var(--gold-soft);color:#7A5E17}
+.badge.diplome{background:#E3E7F5;color:var(--indigo)}
+.badge.abandonne{background:#F5E3DF;color:var(--danger)}
+.badge.retard{background:#F5E3DF;color:var(--danger)}
+.badge.solde{background:#E4EFE7;color:var(--success)}
+
+/* ---------- Trimester tracker (signature) ---------- */
+.trimline{display:flex;align-items:center;margin:14px 2px 4px}
+.trim-dot{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  border:2px solid var(--line);background:var(--paper);color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;
+}
+.trim-dot.done{background:var(--indigo);border-color:var(--indigo);color:var(--gold)}
+.trim-dot.now{border-color:var(--gold);background:var(--gold);color:var(--indigo-deep);box-shadow:0 0 0 4px rgba(198,162,75,.25)}
+.trim-link{flex:1;height:0;border-top:2px dashed var(--line);margin:0 3px}
+.trim-link.done{border-top-color:var(--gold)}
+
+/* ---------- Toolbar / filters ---------- */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar input,.toolbar select{flex:1;min-width:120px}
+.fab{
+  position:fixed;right:18px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:45;
+  width:56px;height:56px;border-radius:50%;background:var(--gold);color:var(--indigo-deep);
+  font-size:28px;box-shadow:0 6px 18px rgba(122,94,23,.4);
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ---------- Modal ---------- */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(22,29,63,.55);z-index:80;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:var(--ecru);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));
+  animation:slideup .22s ease;
+}
+@media(min-width:600px){.modal-bg{align-items:center}.modal{border-radius:20px}}
+@keyframes slideup{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
+.modal h2{font-size:20px;color:var(--indigo);margin-bottom:4px}
+.modal .close-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.xbtn{font-size:24px;color:var(--ink-soft);padding:4px 10px}
+.modal .actions{display:flex;gap:10px;margin-top:20px}
+.modal .actions .btn{flex:1}
+
+/* ---------- Tables ---------- */
+.tablewrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{
+  text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--ink-soft);padding:8px 8px;border-bottom:2px solid var(--gold);
+}
+td{padding:9px 8px;border-bottom:1px solid var(--line)}
+td.num,th.num{text-align:right}
+.note-input{width:64px;text-align:center;padding:8px 6px}
+
+/* ---------- Misc ---------- */
+.muted{color:var(--ink-soft);font-size:13.5px}
+.empty{
+  text-align:center;padding:34px 16px;color:var(--ink-soft);
+}
+.empty .big{font-size:34px;margin-bottom:8px}
+.money{font-variant-numeric:tabular-nums;font-weight:700}
+.money.pos{color:var(--success)}
+.money.neg{color:var(--danger)}
+.section-title{
+  font-family:'Marcellus',serif;font-size:16px;color:var(--indigo);
+  margin:20px 0 10px;display:flex;align-items:center;gap:10px;
+}
+.section-title::after{content:"";flex:1;border-top:2px dashed var(--gold-soft)}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));
+  background:var(--indigo-deep);color:#fff;padding:11px 20px;border-radius:24px;
+  font-size:14px;z-index:100;opacity:0;transition:opacity .25s;pointer-events:none;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:88vw;text-align:center;
+}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+.linkbtn{color:var(--indigo);font-weight:700;text-decoration:underline;font-size:14px}
+.pill-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.pill-tabs button{
+  padding:8px 16px;border-radius:20px;font-weight:700;font-size:13.5px;
+  background:var(--paper);color:var(--ink-soft);border:1px solid var(--line);white-space:nowrap;
+}
+.pill-tabs button.active{background:var(--indigo);color:var(--gold);border-color:var(--indigo)}
+
+/* ---------- Print (bulletins) ---------- */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;left:0;top:0;width:100%;padding:24px;background:#fff}
+  nav.bottom,.fab,header.appbar{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="viewLogin">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="monogram">DAFD</div>
+      <h1>DAFD Académie</h1>
+      <p>Djamil Academy of Fashion Design</p>
+    </div>
+    <div class="stitch"></div>
+    <label for="loginEmail">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username" placeholder="votre@email.com">
+    <label for="loginPwd">Mot de passe</label>
+    <input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••">
+    <div style="margin-top:20px">
+      <button class="btn gold" id="btnLogin">Se connecter</button>
+    </div>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="appShell">
+  <header class="appbar">
+    <div class="appbar-row">
+      <div>
+        <h1>DAFD Académie</h1>
+        <div class="sub">Gestion scolaire</div>
+      </div>
+      <div class="userchip" id="userChip">
+        <span id="chipName">—</span>
+        <span class="role" id="chipRole"></span>
+      </div>
+      <button id="btnLang" onclick="basculerLangue()" style="margin-left:8px;padding:6px 12px;border-radius:16px;font-weight:800;font-size:12.5px;background:transparent;color:var(--gold);border:1.5px solid var(--gold);flex-shrink:0">EN</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== Tableau de bord ===== -->
+    <section id="viewDash">
+      <div class="grid3" id="dashStats"></div>
+      <div class="card" style="margin-top:14px">
+        <h2>Cohortes en cours</h2>
+        <div id="dashCohortes"></div>
+      </div>
+      <div class="card" id="dashFinCard">
+        <h2>Finances du mois</h2>
+        <div id="dashFin"></div>
+      </div>
+      <div class="card" id="dashRetardsCard">
+        <h2>Frais en retard</h2>
+        <div id="dashRetards"></div>
+      </div>
+    </section>
+
+    <!-- ===== Élèves ===== -->
+    <section id="viewEleves" class="hidden">
+      <div class="toolbar">
+        <input type="search" id="searchEleve" placeholder="Rechercher un élève…">
+        <select id="filtreCohorte"></select>
+        <select id="filtreStatut">
+          <option value="">Tous statuts</option>
+          <option value="actif">Actifs</option>
+          <option value="preinscrit">Préinscrits 2026-27</option>
+          <option value="diplome">Diplômés</option>
+          <option value="abandonne">Abandons</option>
+        </select>
+      </div>
+      <div class="card" id="listeEleves"></div>
+    </section>
+
+    <!-- ===== Notes ===== -->
+    <section id="viewNotes" class="hidden">
+      <div class="card">
+        <h2>Saisie des notes</h2>
+        <div class="grid2">
+          <div>
+            <label>Cohorte</label>
+            <select id="notesCohorte"></select>
+          </div>
+          <div>
+            <label>Trimestre</label>
+            <select id="notesTrimestre">
+              <option value="1">Trimestre 1</option><option value="2">Trimestre 2</option>
+              <option value="3">Trimestre 3</option><option value="4">Trimestre 4</option>
+              <option value="5">Trimestre 5</option><option value="6">Trimestre 6</option>
+            </select>
+          </div>
+        </div>
+        <label>Matière</label>
+        <select id="notesMatiere"></select>
+        <div id="notesGrid" class="tablewrap"></div>
+        <div style="margin-top:14px" id="notesSaveRow" class="hidden">
+          <button class="btn" id="btnSaveNotes">Enregistrer les notes</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Bulletin d'un élève</h2>
+        <label>Élève</label>
+        <select id="bullEleve"></select>
+        <label>Trimestre</label>
+        <select id="bullTrimestre">
+          <option value="1">Trimestre 1</option><option value="2">Trimestre 2</option>
+          <option value="3">Trimestre 3</option><option value="4">Trimestre 4</option>
+          <option value="5">Trimestre 5</option><option value="6">Trimestre 6</option>
+        </select>
+        <div style="margin-top:14px">
+          <button class="btn ghost" id="btnVoirBulletin">Voir le bulletin</button>
+        </div>
+        <div id="bulletinZone"></div>
+      </div>
+    </section>
+
+    <!-- ===== Finances ===== -->
+    <section id="viewFinances" class="hidden">
+      <div class="pill-tabs">
+        <button data-fintab="paiements" class="active">Paiements</button>
+        <button data-fintab="soldes">Soldes élèves</button>
+        <button data-fintab="depenses" id="pillDepenses">Dépenses</button>
+        <button data-fintab="rapport" id="pillRapport">Rapport</button>
+      </div>
+      <div id="finPaiements">
+        <div class="card">
+          <button class="btn gold" id="btnAddPaiement">+ Enregistrer un paiement</button>
+        </div>
+        <div class="card"><h2>Derniers paiements</h2><div id="listePaiements"></div></div>
+      </div>
+      <div id="finDepenses" class="hidden">
+        <div class="card">
+          <button class="btn gold" id="btnAddDepense">+ Enregistrer une dépense</button>
+        </div>
+        <div class="card"><h2>Dernières dépenses</h2><div id="listeDepenses"></div></div>
+      </div>
+      <div id="finSoldes" class="hidden">
+        <div class="card"><h2>Situation des frais par élève</h2><div id="listeSoldes"></div></div>
+      </div>
+      <div id="finRapport" class="hidden">
+        <div class="card">
+          <h2>Rapport mensuel</h2>
+          <label>Mois</label>
+          <input type="month" id="rapportMois">
+          <div id="rapportZone" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Plus (paramètres) ===== -->
+    <section id="viewPlus" class="hidden">
+      <div class="card">
+        <h2>Cohortes</h2>
+        <div id="listeCohortes"></div>
+        <div style="margin-top:12px">
+          <button class="btn ghost small" id="btnAddCohorte">+ Nouvelle cohorte</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Matières enseignées</h2>
+        <p class="muted">Une matière par ligne. Utilisées pour la saisie des notes et les bulletins.</p>
+        <textarea id="matieresList" rows="8" style="margin-top:10px"></textarea>
+        <div style="margin-top:12px">
+          <button class="btn small" id="btnSaveMatieres">Enregistrer les matières</button>
+        </div>
+      </div>
+      <div class="card" id="rolesCard">
+        <h2>Accès directeur</h2>
+        <p class="muted">Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.</p>
+        <textarea id="directeursList" rows="3" style="margin-top:10px"></textarea>
+        <div style="margin-top:12px">
+          <button class="btn small" id="btnSaveDirecteurs">Enregistrer les accès</button>
+        </div>
+      </div>
+      <div class="card" id="securiteCard">
+        <h2>Code de sécurité administrateur</h2>
+        <p class="muted">Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.</p>
+        <input type="password" id="newAdminCode" placeholder="Nouveau code" inputmode="numeric" style="margin-top:10px">
+        <div style="margin-top:12px">
+          <button class="btn small" id="btnSaveAdminCode">Changer le code</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Compte</h2>
+        <p class="muted" id="accountInfo"></p>
+        <div style="margin-top:12px">
+          <button class="btn danger small" id="btnLogout">Se déconnecter</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab hidden" id="fabAdd" title="Ajouter">+</button>
+
+  <nav class="bottom">
+    <button data-view="Dash" class="active"><span class="ico">◈</span>Tableau</button>
+    <button data-view="Eleves"><span class="ico">👤</span>Élèves</button>
+    <button data-view="Notes"><span class="ico">✎</span>Notes</button>
+    <button data-view="Finances" id="navFinances"><span class="ico">◉</span>Finances</button>
+    <button data-view="Plus"><span class="ico">⚙</span>Plus</button>
+  </nav>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="printArea"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================
+   DAFD Académie — Gestion scolaire
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDAvCRiIaxsZS7Gp5WxtISv3o1m0Buaw4k",
+  authDomain: "dafd-academie.firebaseapp.com",
+  projectId: "dafd-academie",
+  storageBucket: "dafd-academie.firebasestorage.app",
+  messagingSenderId: "1043603554908",
+  appId: "1:1043603554908:web:42e118858a2b054ef51c99"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ---------- État global ---------- */
+let currentUser = null;
+let role = "manager"; // "directeur" ou "manager"
+let cohortes = [];
+let eleves = [];
+let adminCode = "1234"; // code de sécurité par défaut, modifiable dans Plus > Sécurité
+let paiements = [];
+let depenses = [];
+let notes = [];
+let matieres = [];
+let directeurs = [];
+let unsubs = [];
+let currentView = "Dash";
+let finTab = "paiements";
+
+const MATIERES_DEFAUT = [
+  "Patronage / Coupe à plat",
+  "Couture & Montage",
+  "Dessin de mode / Stylisme",
+  "Technologie des textiles",
+  "Moulage / Drapé",
+  "Tenues traditionnelles africaines",
+  "Histoire de la mode",
+  "Gestion d'atelier"
+];
+
+/* ---------- Utilitaires ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function money(n){
+  n = Number(n) || 0;
+  return "D " + n.toLocaleString("fr-FR", {maximumFractionDigits: 0});
+}
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(iso){
+  if(!iso) return "—";
+  const p = iso.split("-");
+  if(p.length !== 3) return iso;
+  return p[2] + "/" + p[1] + "/" + p[0];
+}
+function initiales(nom, prenom){
+  return ((prenom||" ")[0] + (nom||" ")[0]).toUpperCase();
+}
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2600);
+}
+function appreciation(moy){
+  if(moy >= 16) return "Excellent";
+  if(moy >= 14) return "Très bien";
+  if(moy >= 12) return "Bien";
+  if(moy >= 10) return "Assez bien";
+  if(moy >= 8)  return "Passable";
+  return "Insuffisant";
+}
+function statutLabel(s){
+  return {actif:"Actif", preinscrit:"Préinscrit 26-27", diplome:"Diplômé", abandonne:"Abandon"}[s] || "—";
+}
+
+/* ================= LANGUE DE L'INTERFACE (FR / EN) =================
+   Bouton EN/FR dans l'en-tête. Le français reste la langue source du
+   code ; en mode EN, un traducteur parcourt l'écran et remplace les
+   textes connus. Le choix est mémorisé sur l'appareil. */
+let LANG = localStorage.getItem("dafd_lang") || "fr";
+const DICO_EN = {
+  "Gestion scolaire":"School management","Tableau":"Dashboard","Élèves":"Students","Notes":"Grades","Finances":"Finances","Plus":"More",
+  "Cohortes en cours":"Current cohorts","Finances du mois":"This month's finances","Frais en retard":"Overdue fees","Élèves actifs":"Active students","Préinscrits 2026-27":"Pre-enrolled 2026-27","Abandons":"Dropouts","Diplômés":"Graduates","Actifs":"Active",
+  "Encaissements":"Income","Dépenses":"Expenses","Solde du mois":"Month balance","Tous les frais sont à jour 🎉":"All fees are up to date 🎉","Élèves en retard":"Students overdue",
+  "Rechercher un élève…":"Search a student…","Toutes cohortes":"All cohorts","Tous statuts":"All statuses","Aucun élève trouvé.":"No student found.","Aucun élève.":"No student.","Aucun élève":"No student",
+  "Actif":"Active","Préinscrit 26-27":"Pre-enrolled 26-27","Préinscrit 2026-27":"Pre-enrolled 2026-27","Diplômé":"Graduated","Abandon":"Dropped out","Frais soldés":"Fees paid","Soldé":"Paid up",
+  "Nouvel élève":"New student","Modifier l'élève":"Edit student","Photo d'identité":"ID photo","Prénom":"First name","Nom":"Last name","Sexe":"Gender","Féminin":"Female","Masculin":"Male","Date de naissance":"Date of birth","Téléphone (WhatsApp)":"Phone (WhatsApp)","Contact parent / tuteur":"Parent / guardian contact","Adresse":"Address","Cohorte":"Cohort","Statut":"Status","Frais de scolarité totaux (dalasis)":"Total tuition fees (dalasis)","Date d'inscription":"Enrollment date","Remarques":"Notes","Annuler":"Cancel","Enregistrer":"Save","Modifier":"Edit","Supprimer":"Delete","🔒 Modifier":"🔒 Edit","🔒 Supprimer":"🔒 Delete",
+  "Contact":"Contact","Téléphone":"Phone","Parent / tuteur":"Parent / guardian","Inscrit le":"Enrolled on","Résultats":"Results","Pas encore de notes.":"No grades yet.","Frais de scolarité":"Tuition fees","Total dû":"Total due","Payé":"Paid","Reste":"Balance","+ Paiement":"+ Payment","📲 Relancer":"📲 Send reminder",
+  "Saisie des notes":"Grade entry","Matière":"Subject","Trimestre":"Term","Trimestre 1":"Term 1","Trimestre 2":"Term 2","Trimestre 3":"Term 3","Trimestre 4":"Term 4","Trimestre 5":"Term 5","Trimestre 6":"Term 6","Trimestre actuel":"Current term","Choisissez une cohorte et une matière.":"Choose a cohort and a subject.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Élève":"Student","Note /20":"Grade /20","Enregistrer les notes":"Save grades",
+  "Bulletin d'un élève":"Student report card","Voir le bulletin":"View report card","Pas encore de notes pour ce trimestre.":"No grades for this term yet.","Appréciation":"Remark","Moyenne générale":"Overall average","Le Directeur":"The Director","🖨 Imprimer / PDF":"🖨 Print / PDF","Élève :":"Student:","Cohorte :":"Cohort:",
+  "Excellent":"Excellent","Très bien":"Very good","Bien":"Good","Assez bien":"Fairly good","Passable":"Pass","Insuffisant":"Insufficient",
+  "Paiements":"Payments","Nouveau paiement":"New payment","Date du paiement":"Payment date","Montant (dalasis)":"Amount (dalasis)","Mode":"Method","Espèces":"Cash","Virement bancaire":"Bank transfer","Autre":"Other","Note (optionnel)":"Note (optional)","Aucun paiement enregistré.":"No payment recorded.","Derniers paiements":"Recent payments","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt",
+  "Nouvelle dépense":"New expense","Libellé":"Description","Catégorie":"Category","Aucune dépense enregistrée.":"No expense recorded.","Dernières dépenses":"Recent expenses","Dépense enregistrée ✓":"Expense saved ✓","Suppr.":"Del.",
+  "Rapport mensuel":"Monthly report","Rapport":"Report","Mois":"Month","Dépenses par catégorie":"Expenses by category","Encaissé ce mois":"Collected this month","Situation des frais par élève":"Fee status per student","Soldes élèves":"Student balances",
+  "Cohortes":"Cohorts","Nouvelle cohorte":"New cohort","+ Nouvelle cohorte":"+ New cohort","Nom de la cohorte":"Cohort name","Année de début":"Start year","Supprimer cette cohorte":"Delete this cohort","Matières enseignées":"Subjects taught","Enregistrer les matières":"Save subjects","Accès directeur":"Director access","Enregistrer les accès":"Save access","Code de sécurité administrateur":"Administrator security code","Changer le code":"Change code","Compte":"Account","Se déconnecter":"Log out","Se connecter":"Log in","Email":"Email","Mot de passe":"Password",
+  "reste":"balance","Une matière par ligne. Utilisées pour la saisie des notes et les bulletins.":"One subject per line. Used for grade entry and report cards.",
+  "Nom et téléphone":"Name and phone","Nouveau code":"New code","Ex : Cohorte 2024-2026":"E.g.: Cohort 2024-2026","Ex : Tissu pour ateliers":"E.g.: Fabric for workshops","Ex : 2e versement":"E.g.: 2nd installment",
+  "Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.":"This code is required before any student deletion. Keep it confidential."
+};
+let _translating = false;
+function traduirePage(){
+  _translating = true;
+  try{
+    const btn = document.getElementById("btnLang");
+    if(btn) btn.textContent = LANG === "fr" ? "EN" : "FR";
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n;
+    while((n = walker.nextNode())){
+      const brut = n.nodeValue;
+      if(!brut || !brut.trim()) continue;
+      if(n.__fr === undefined) n.__fr = brut;
+      if(LANG === "en"){
+        const cle = n.__fr.trim();
+        if(DICO_EN[cle] !== undefined){
+          n.nodeValue = n.__fr.replace(cle, DICO_EN[cle]);
+        } else {
+          n.nodeValue = n.__fr;
+        }
+      } else {
+        if(brut !== n.__fr) n.nodeValue = n.__fr;
+      }
+    }
+    document.querySelectorAll("[placeholder]").forEach(el=>{
+      if(el.__frP === undefined) el.__frP = el.getAttribute("placeholder");
+      const cle = (el.__frP||"").trim();
+      el.setAttribute("placeholder", (LANG === "en" && DICO_EN[cle]) ? DICO_EN[cle] : el.__frP);
+    });
+  } finally {
+    _translating = false;
+  }
+}
+function basculerLangue(){
+  LANG = LANG === "fr" ? "en" : "fr";
+  localStorage.setItem("dafd_lang", LANG);
+  traduirePage();
+}
+/* Retraduit automatiquement après chaque changement d'écran (modales,
+   listes re-rendues, etc.) sans toucher aux fonctions existantes. */
+let _traduireProg = false;
+new MutationObserver(()=>{
+  if(_translating || _traduireProg) return;
+  _traduireProg = true;
+  requestAnimationFrame(()=>{ _traduireProg = false; traduirePage(); });
+}).observe(document.body, {childList:true, subtree:true});
+window.addEventListener("load", traduirePage);
+function avatarHtml(e){
+  if(e && e.photo) return '<div class="avatar"><img src="'+e.photo+'" alt=""></div>';
+  return '<div class="avatar">'+initiales(e?e.nom:"", e?e.prenom:"")+'</div>';
+}
+
+/* ---------- Photo d'identité (compressée, stockée dans Firestore) ---------- */
+window._photoEleve = "";
+function photoPreviewHtml(){
+  if(window._photoEleve) return '<img src="'+window._photoEleve+'" alt="Photo">';
+  return '📷';
+}
+function handlePhotoInput(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ toast("Choisissez une image."); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const MAX = 300;
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; } }
+      else{ if(h > MAX){ w = Math.round(w * MAX / h); h = MAX; } }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      let data = canvas.toDataURL("image/jpeg", 0.72);
+      if(data.length > 140000){ data = canvas.toDataURL("image/jpeg", 0.5); }
+      window._photoEleve = data;
+      const prev = $("photoPreview");
+      if(prev) prev.innerHTML = photoPreviewHtml();
+      const btn = $("btnRetirerPhoto");
+      if(btn) btn.classList.remove("hidden");
+      toast("Photo ajoutée ✓");
+    };
+    img.onerror = function(){ toast("Impossible de lire cette image."); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function(){ toast("Erreur de lecture du fichier."); };
+  reader.readAsDataURL(file);
+}
+function retirerPhoto(){
+  window._photoEleve = "";
+  const prev = $("photoPreview");
+  if(prev) prev.innerHTML = photoPreviewHtml();
+  const btn = $("btnRetirerPhoto");
+  if(btn) btn.classList.add("hidden");
+}
+function cohorteNom(id){
+  const c = cohortes.find(x => x.id === id);
+  return c ? c.nom : "—";
+}
+function totalPayeEleve(eleveId){
+  return paiements.filter(p => p.eleveId === eleveId).reduce((s,p) => s + (Number(p.montant)||0), 0);
+}
+
+/* ---------- WhatsApp (reçus & relances) ---------- */
+function telWa(t){
+  t = String(t||"").replace(/[^0-9]/g,"");
+  if(!t) return "";
+  if(t.startsWith("00")) t = t.slice(2);
+  if(t.length <= 7) t = "220" + t;          // numéro gambien local
+  return t;
+}
+function waOpen(phone, text){
+  const p = telWa(phone);
+  if(!p){ toast("Pas de numéro WhatsApp pour cet élève."); return; }
+  window.open("https://wa.me/" + p + "?text=" + encodeURIComponent(text), "_blank");
+}
+function relancer(eleveId){
+  const e = eleves.find(x => x.id === eleveId);
+  if(!e) return;
+  const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(eleveId);
+  const msg = "🧵 DAFD Académie — Rappel de scolarité\n\n"
+    + "Bonjour " + (e.prenom||"") + ",\n"
+    + "Il reste " + money(reste) + " à régler pour votre formation.\n"
+    + "Merci de passer à l'académie pour régulariser.\n\n"
+    + "Djamil Academy of Fashion Design — Bakau New Town";
+  waOpen(e.telephone, msg);
+}
+
+/* ---------- Authentification ---------- */
+$("btnLogin").addEventListener("click", doLogin);
+$("loginPwd").addEventListener("keydown", e => { if(e.key === "Enter") doLogin(); });
+
+async function doLogin(){
+  const email = $("loginEmail").value.trim();
+  const pwd = $("loginPwd").value;
+  $("loginError").textContent = "";
+  if(!email || !pwd){ $("loginError").textContent = "Entrez votre email et votre mot de passe."; return; }
+  $("btnLogin").textContent = "Connexion…";
+  try{
+    await auth.signInWithEmailAndPassword(email, pwd);
+  }catch(err){
+    let msg = "Connexion impossible. Vérifiez email et mot de passe.";
+    if(err && err.code === "auth/network-request-failed") msg = "Problème réseau. Vérifiez votre connexion et réessayez.";
+    if(err && (err.code === "auth/too-many-requests")) msg = "Trop d'essais. Attendez quelques minutes puis réessayez.";
+    $("loginError").textContent = msg;
+  }
+  $("btnLogin").textContent = "Se connecter";
+}
+
+auth.onAuthStateChanged(async user => {
+  if(user){
+    currentUser = user;
+    await resolveRole();
+    $("viewLogin").style.display = "none";
+    $("appShell").style.display = "block";
+    $("chipName").textContent = (user.email || "").split("@")[0];
+    $("chipRole").textContent = role === "directeur" ? "Directeur" : "Manager";
+    applyRoleUI();
+    startData();
+    showView("Dash");
+  }else{
+    currentUser = null;
+    stopData();
+    $("appShell").style.display = "none";
+    $("viewLogin").style.display = "flex";
+  }
+});
+
+async function resolveRole(){
+  try{
+    const ref = db.collection("config").doc("acces");
+    const snap = await ref.get();
+    if(!snap.exists){
+      // Premier utilisateur connecté = directeur (auto-configuration)
+      directeurs = [currentUser.email];
+      await ref.set({ directeurs: directeurs });
+    }else{
+      directeurs = (snap.data().directeurs || []).map(e => String(e).toLowerCase().trim());
+    }
+  }catch(e){
+    directeurs = [];
+  }
+  role = directeurs.includes((currentUser.email||"").toLowerCase()) ? "directeur" : "manager";
+}
+
+function applyRoleUI(){
+  const fin = role === "directeur";
+  $("dashFinCard").classList.toggle("hidden", !fin);
+  $("rolesCard").classList.toggle("hidden", !fin);
+  $("securiteCard").classList.toggle("hidden", !fin);
+  $("pillRapport").classList.toggle("hidden", !fin);
+  $("accountInfo").textContent = "Connecté : " + (currentUser.email||"") + " — rôle : " + (fin ? "Directeur (accès complet)" : "Manager-caissier (encaissements et dépenses du jour — pas de rapports ni salaires)");
+}
+
+$("btnLogout").addEventListener("click", () => auth.signOut());
+
+/* ---------- Abonnements Firestore ---------- */
+function startData(){
+  stopData();
+  unsubs.push(db.collection("cohortes").onSnapshot(s => {
+    cohortes = s.docs.map(d => ({id:d.id, ...d.data()}));
+    cohortes.sort((a,b) => String(a.anneeDebut||"").localeCompare(String(b.anneeDebut||"")));
+    renderAll();
+  }));
+  unsubs.push(db.collection("eleves").onSnapshot(s => {
+    eleves = s.docs.map(d => ({id:d.id, ...d.data()}));
+    eleves.sort((a,b) => String(a.nom||"").localeCompare(String(b.nom||""), "fr"));
+    renderAll();
+  }));
+  unsubs.push(db.collection("notes").onSnapshot(s => {
+    notes = s.docs.map(d => ({id:d.id, ...d.data()}));
+    renderAll();
+  }));
+  unsubs.push(db.collection("config").doc("matieres").onSnapshot(s => {
+    matieres = (s.exists && Array.isArray(s.data().liste) && s.data().liste.length) ? s.data().liste : MATIERES_DEFAUT.slice();
+    renderMatieresSelect();
+    $("matieresList").value = matieres.join("\n");
+  }));
+  unsubs.push(db.collection("config").doc("securite").onSnapshot(s => {
+    adminCode = (s.exists && s.data().adminCode) ? String(s.data().adminCode) : "1234";
+  }));
+  unsubs.push(db.collection("paiements").onSnapshot(s => {
+    paiements = s.docs.map(d => ({id:d.id, ...d.data()}));
+    paiements.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
+    renderAll();
+  }));
+  unsubs.push(db.collection("depenses").onSnapshot(s => {
+    depenses = s.docs.map(d => ({id:d.id, ...d.data()}));
+    depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
+    renderAll();
+  }));
+  if(role === "directeur"){
+    $("directeursList").value = directeurs.join("\n");
+  }
+}
+function stopData(){
+  unsubs.forEach(u => { try{u();}catch(e){} });
+  unsubs = [];
+}
+
+/* ---------- Navigation ---------- */
+document.querySelectorAll("nav.bottom button").forEach(b => {
+  b.addEventListener("click", () => showView(b.dataset.view));
+});
+function showView(v){
+  currentView = v;
+  ["Dash","Eleves","Notes","Finances","Plus"].forEach(x => {
+    $("view"+x).classList.toggle("hidden", x !== v);
+  });
+  document.querySelectorAll("nav.bottom button").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === v);
+  });
+  $("fabAdd").classList.toggle("hidden", v !== "Eleves");
+  window.scrollTo(0,0);
+  renderAll();
+}
+
+document.querySelectorAll(".pill-tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    finTab = b.dataset.fintab;
+    document.querySelectorAll(".pill-tabs button").forEach(x => x.classList.toggle("active", x === b));
+    ["Paiements","Depenses","Soldes","Rapport"].forEach(x => {
+      $("fin"+x).classList.toggle("hidden", x.toLowerCase() !== finTab);
+    });
+  });
+});
+
+/* ---------- Rendu global ---------- */
+function renderAll(){
+  renderCohorteSelects();
+  if(currentView === "Dash") renderDash();
+  if(currentView === "Eleves") renderEleves();
+  if(currentView === "Notes"){ renderNotesGrid(); renderBullSelect(); }
+  if(currentView === "Finances") renderFinances();
+  if(currentView === "Plus") renderCohortesList();
+}
+
+function renderCohorteSelects(){
+  const opts = cohortes.map(c => '<option value="'+c.id+'">'+esc(c.nom)+'</option>').join("");
+  const f = $("filtreCohorte");
+  const prev = f.value;
+  f.innerHTML = '<option value="">Toutes cohortes</option>' + opts;
+  f.value = prev;
+  const n = $("notesCohorte");
+  const prevN = n.value;
+  n.innerHTML = opts || '<option value="">Créez d\'abord une cohorte</option>';
+  if(prevN) n.value = prevN;
+}
+function renderMatieresSelect(){
+  const m = $("notesMatiere");
+  const prev = m.value;
+  m.innerHTML = matieres.map(x => '<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");
+  if(prev) m.value = prev;
+}
+
+/* ---------- Tableau de bord ---------- */
+function renderDash(){
+  const actifs = eleves.filter(e => e.statut === "actif");
+  const pre = eleves.filter(e => e.statut === "preinscrit");
+  let stats = ""
+    + '<div class="stat"><div class="num">'+actifs.length+'</div><div class="lbl">Élèves actifs</div></div>'
+    + '<div class="stat ok"><div class="num">'+pre.length+'</div><div class="lbl">Préinscrits 2026-27</div></div>'
+    + '<div class="stat"><div class="num">'+cohortes.length+'</div><div class="lbl">Cohortes</div></div>';
+  if(role === "directeur"){
+    const mois = todayISO().slice(0,7);
+    const encMois = paiements.filter(p => String(p.date||"").slice(0,7) === mois).reduce((s,p) => s+(Number(p.montant)||0),0);
+    stats += '<div class="stat ok"><div class="num" style="font-size:20px">'+money(encMois)+'</div><div class="lbl">Encaissé ce mois</div></div>';
+  }
+  const retardsN = actifs.filter(e => (Number(e.fraisTotal)||0) - totalPayeEleve(e.id) > 0).length;
+  stats += '<div class="stat alert"><div class="num">'+retardsN+'</div><div class="lbl">Élèves en retard</div></div>';
+  $("dashStats").innerHTML = stats;
+
+  // Cohortes + tracker trimestres (signature)
+  if(!cohortes.length){
+    $("dashCohortes").innerHTML = '<div class="empty"><div class="big">✂️</div>Aucune cohorte. Créez la première dans l\'onglet <b>Plus</b>.</div>';
+  }else{
+    $("dashCohortes").innerHTML = cohortes.map(c => {
+      const n = eleves.filter(e => e.cohorteId === c.id && e.statut === "actif").length;
+      const t = Number(c.trimestreActuel) || 1;
+      let dots = "";
+      for(let i = 1; i <= 6; i++){
+        const cls = i < t ? "done" : (i === t ? "now" : "");
+        dots += '<div class="trim-dot '+cls+'">T'+i+'</div>';
+        if(i < 6) dots += '<div class="trim-link '+(i < t ? "done" : "")+'"></div>';
+      }
+      return '<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<b>'+esc(c.nom)+'</b><span class="muted">'+n+' élève'+(n>1?"s":"")+'</span></div>'
+        + '<div class="trimline">'+dots+'</div></div>';
+    }).join("");
+  }
+
+  if(role === "directeur"){
+    const mois = todayISO().slice(0,7);
+    const enc = paiements.filter(p => String(p.date||"").slice(0,7) === mois).reduce((s,p)=>s+(Number(p.montant)||0),0);
+    const dep = depenses.filter(d => String(d.date||"").slice(0,7) === mois).reduce((s,d)=>s+(Number(d.montant)||0),0);
+    const solde = enc - dep;
+    $("dashFin").innerHTML =
+      '<div class="list-item"><div class="li-main">Encaissements</div><div class="li-end money pos">'+money(enc)+'</div></div>'
+      + '<div class="list-item"><div class="li-main">Dépenses</div><div class="li-end money neg">'+money(dep)+'</div></div>'
+      + '<div class="list-item"><div class="li-main"><b>Solde du mois</b></div><div class="li-end money '+(solde>=0?"pos":"neg")+'">'+money(solde)+'</div></div>';
+  }
+  const retards = eleves.filter(e => e.statut === "actif").map(e => {
+    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    return {e, reste};
+  }).filter(x => x.reste > 0).sort((a,b) => b.reste - a.reste);
+  $("dashRetards").innerHTML = retards.length
+    ? retards.slice(0,8).map(x =>
+        '<div class="list-item"><div class="avatar">'+initiales(x.e.nom,x.e.prenom)+'</div>'
+        + '<div class="li-main"><div class="li-title">'+esc(x.e.prenom)+' '+esc(x.e.nom)+'</div>'
+        + '<div class="li-sub">'+esc(cohorteNom(x.e.cohorteId))+'</div></div>'
+        + '<div class="li-end"><span class="money neg">'+money(x.reste)+'</span><br>'
+        + '<button class="linkbtn" onclick="relancer(\''+x.e.id+'\')">📲 Relancer</button></div></div>').join("")
+    : '<div class="empty">Tous les frais sont à jour 🎉</div>';
+}
+
+/* ---------- Élèves ---------- */
+$("searchEleve").addEventListener("input", renderEleves);
+$("filtreCohorte").addEventListener("change", renderEleves);
+$("filtreStatut").addEventListener("change", renderEleves);
+$("fabAdd").addEventListener("click", () => openEleveForm(null));
+
+function renderEleves(){
+  const q = $("searchEleve").value.trim().toLowerCase();
+  const fc = $("filtreCohorte").value;
+  const fs = $("filtreStatut").value;
+  let list = eleves.filter(e => {
+    if(fc && e.cohorteId !== fc) return false;
+    if(fs && e.statut !== fs) return false;
+    if(q && !((e.nom||"")+" "+(e.prenom||"")+" "+(e.telephone||"")).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(!list.length){
+    $("listeEleves").innerHTML = '<div class="empty"><div class="big">🧵</div>Aucun élève trouvé.<br>Appuyez sur <b>+</b> pour inscrire un élève.</div>';
+    return;
+  }
+  $("listeEleves").innerHTML = list.map(e => {
+    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    const fin = reste > 0 ? '<span class="badge retard">Reste '+money(reste)+'</span>' : '<span class="badge solde">Frais soldés</span>';
+    return '<div class="list-item" onclick="openFiche(\''+e.id+'\')" style="cursor:pointer">'
+      + avatarHtml(e)
+      + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
+      + '<div class="li-sub">'+esc(cohorteNom(e.cohorteId))+' · '+esc(e.telephone||"")+'</div></div>'
+      + '<div class="li-end"><span class="badge '+esc(e.statut)+'">'+statutLabel(e.statut)+'</span><br>'+fin+'</div></div>';
+  }).join("");
+}
+
+/* ---------- Modal générique ---------- */
+function openModal(html){
+  $("modalBox").innerHTML = html;
+  $("modalBg").classList.add("open");
+}
+function closeModal(){
+  $("modalBg").classList.remove("open");
+  $("modalBox").innerHTML = "";
+}
+$("modalBg").addEventListener("click", e => { if(e.target === $("modalBg")) closeModal(); });
+
+/* ---------- Formulaire élève ---------- */
+function openEleveForm(id){
+  const e = id ? eleves.find(x => x.id === id) : null;
+  window._photoEleve = (e && e.photo) ? e.photo : "";
+  const cohOpts = cohortes.map(c => '<option value="'+c.id+'" '+(e && e.cohorteId===c.id?"selected":"")+'>'+esc(c.nom)+'</option>').join("");
+  openModal(
+    '<div class="close-row"><h2>'+(e?"Modifier l'élève":"Nouvel élève")+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<label>Photo d\'identité</label>'
+    + '<div class="photo-row">'
+    + '<div class="photo-preview" id="photoPreview">'+photoPreviewHtml()+'</div>'
+    + '<div>'
+    + '<input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoInput(this)">'
+    + '<button class="btn small ghost" type="button" onclick="$(\'photoInput\').click()">📷 '+(window._photoEleve?"Changer":"Ajouter")+' la photo</button>'
+    + '<button class="btn small ghost '+(window._photoEleve?"":"hidden")+'" type="button" id="btnRetirerPhoto" onclick="retirerPhoto()" style="margin-left:6px">✕ Retirer</button>'
+    + '</div></div>'
+    + '<label>Prénom</label><input id="fPrenom" value="'+esc(e?e.prenom:"")+'">'
+    + '<label>Nom</label><input id="fNom" value="'+esc(e?e.nom:"")+'">'
+    + '<div class="grid2"><div><label>Sexe</label><select id="fSexe">'
+    + '<option value="F" '+(e&&e.sexe==="F"?"selected":"")+'>Féminin</option>'
+    + '<option value="M" '+(e&&e.sexe==="M"?"selected":"")+'>Masculin</option></select></div>'
+    + '<div><label>Date de naissance</label><input type="date" id="fNaissance" value="'+esc(e?e.dateNaissance||"":"")+'"></div></div>'
+    + '<label>Téléphone (WhatsApp)</label><input type="tel" id="fTel" value="'+esc(e?e.telephone||"":"")+'" placeholder="+220 …">'
+    + '<label>Contact parent / tuteur</label><input id="fParent" value="'+esc(e?e.contactParent||"":"")+'" placeholder="Nom et téléphone">'
+    + '<label>Adresse</label><input id="fAdresse" value="'+esc(e?e.adresse||"":"")+'">'
+    + '<div class="grid2"><div><label>Cohorte</label><select id="fCohorte">'+cohOpts+'</select></div>'
+    + '<div><label>Statut</label><select id="fStatut">'
+    + '<option value="actif" '+(e&&e.statut==="actif"?"selected":"")+'>Actif</option>'
+    + '<option value="preinscrit" '+(!e||e.statut==="preinscrit"?(e?"selected":""):"")+'>Préinscrit 2026-27</option>'
+    + '<option value="diplome" '+(e&&e.statut==="diplome"?"selected":"")+'>Diplômé</option>'
+    + '<option value="abandonne" '+(e&&e.statut==="abandonne"?"selected":"")+'>Abandon</option>'
+    + '</select></div></div>'
+    + (role==="directeur" ? '<label>Frais de scolarité totaux (dalasis)</label><input type="number" id="fFrais" value="'+esc(e?e.fraisTotal||"":"")+'" placeholder="Ex : 25000">' : '')
+    + '<label>Date d\'inscription</label><input type="date" id="fInscription" value="'+esc(e?e.dateInscription||todayISO():todayISO())+'">'
+    + '<label>Remarques</label><textarea id="fRemarques" rows="2">'+esc(e?e.remarques||"":"")+'</textarea>'
+    + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
+    + '<button class="btn gold" onclick="saveEleve(\''+(id||"")+'\')">Enregistrer</button></div>'
+  );
+}
+
+async function saveEleve(id){
+  if(id && role !== "directeur"){ toast("🔒 Seul le directeur peut modifier une fiche élève."); return; }
+  const data = {
+    prenom: $("fPrenom").value.trim(),
+    nom: $("fNom").value.trim(),
+    sexe: $("fSexe").value,
+    dateNaissance: $("fNaissance").value,
+    telephone: $("fTel").value.trim(),
+    contactParent: $("fParent").value.trim(),
+    adresse: $("fAdresse").value.trim(),
+    cohorteId: $("fCohorte").value,
+    statut: $("fStatut").value,
+    dateInscription: $("fInscription").value,
+    remarques: $("fRemarques").value.trim(),
+    photo: window._photoEleve || ""
+  };
+  if($("fFrais")) data.fraisTotal = Number($("fFrais").value) || 0;
+  if(!data.prenom && !data.nom){ toast("Entrez au moins un nom."); return; }
+  if(!data.cohorteId){ toast("Créez d'abord une cohorte (onglet Plus)."); return; }
+  try{
+    if(id){ await db.collection("eleves").doc(id).update(data); }
+    else{ await db.collection("eleves").add(data); }
+    closeModal();
+    toast("Élève enregistré ✓");
+  }catch(err){ toast("Erreur d'enregistrement. Réessayez."); }
+}
+
+/* ---------- Fiche élève ---------- */
+function openFiche(id){
+  const e = eleves.find(x => x.id === id);
+  if(!e) return;
+  const paye = totalPayeEleve(id);
+  const reste = (Number(e.fraisTotal)||0) - paye;
+  const mesPaiements = paiements.filter(p => p.eleveId === id);
+  const mesNotes = notes.filter(n => n.eleveId === id);
+  const parTrim = {};
+  mesNotes.forEach(n => {
+    const t = n.trimestre;
+    if(!parTrim[t]) parTrim[t] = [];
+    parTrim[t].push(n);
+  });
+  let notesHtml = Object.keys(parTrim).sort().map(t => {
+    const arr = parTrim[t];
+    const moy = arr.reduce((s,n) => s + (Number(n.note)||0), 0) / arr.length;
+    return '<div class="list-item"><div class="li-main">Trimestre '+t+' — '+arr.length+' note'+(arr.length>1?"s":"")+'</div>'
+      + '<div class="li-end"><b>'+moy.toFixed(1)+'/20</b><br><span class="muted">'+appreciation(moy)+'</span></div></div>';
+  }).join("") || '<p class="muted">Pas encore de notes.</p>';
+
+  let finHtml = "";
+  finHtml = '<div class="section-title">Frais de scolarité</div>'
+      + '<div class="list-item"><div class="li-main">Total dû</div><div class="li-end money">'+money(e.fraisTotal)+'</div></div>'
+      + '<div class="list-item"><div class="li-main">Payé</div><div class="li-end money pos">'+money(paye)+'</div></div>'
+      + '<div class="list-item"><div class="li-main"><b>Reste</b></div><div class="li-end money '+(reste>0?"neg":"pos")+'">'+money(reste)+'</div></div>'
+      + (mesPaiements.length ? mesPaiements.map(p =>
+          '<div class="list-item"><div class="li-main"><div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+'</div></div>'
+          + '<div class="li-end money pos">'+money(p.montant)+'</div></div>').join("") : "")
+      + '<div style="margin-top:10px"><button class="btn small gold" onclick="closeModal();openPaiementForm(\''+id+'\')">+ Paiement</button> '
+      + (reste > 0 ? '<button class="btn small ghost" onclick="relancer(\''+id+'\')">📲 Relancer</button>' : '')
+      + '</div>';
+
+  openModal(
+    '<div class="close-row"><h2>'+esc(e.prenom)+' '+esc(e.nom)+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + (e.photo ? '<img src="'+e.photo+'" class="photo-fiche" alt="Photo">' : '')
+    + '<p class="muted">'+esc(cohorteNom(e.cohorteId))+' · <span class="badge '+esc(e.statut)+'">'+statutLabel(e.statut)+'</span></p>'
+    + '<div class="section-title">Contact</div>'
+    + '<div class="list-item"><div class="li-main">Téléphone</div><div class="li-end">'+esc(e.telephone||"—")+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Parent / tuteur</div><div class="li-end">'+esc(e.contactParent||"—")+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Adresse</div><div class="li-end">'+esc(e.adresse||"—")+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Inscrit le</div><div class="li-end">'+fmtDate(e.dateInscription)+'</div></div>'
+    + (e.remarques ? '<p class="muted" style="margin-top:8px">'+esc(e.remarques)+'</p>' : '')
+    + '<div class="section-title">Résultats</div>' + notesHtml
+    + finHtml
+    + '<div class="actions">'
+    + (role === "directeur"
+        ? '<button class="btn ghost" onclick="closeModal();openEleveForm(\''+id+'\')">Modifier</button>'
+          + '<button class="btn danger" onclick="deleteEleve(\''+id+'\')">Supprimer</button>'
+        : '<button class="btn ghost" disabled style="opacity:.45;cursor:not-allowed" title="Réservé au directeur">🔒 Modifier</button>'
+          + '<button class="btn danger" disabled style="opacity:.45;cursor:not-allowed" title="Réservé au directeur">🔒 Supprimer</button>')
+    + '</div>'
+  );
+}
+
+async function deleteEleve(id){
+  if(role !== "directeur"){ toast("🔒 Seul le directeur peut supprimer un élève."); return; }
+  const e = eleves.find(x => x.id === id);
+  if(!e) return;
+  const code = prompt("🔐 Code de sécurité administrateur :");
+  if(code === null) return; // annulé
+  if(String(code).trim() !== adminCode){ toast("Code incorrect. Suppression annulée."); return; }
+  if(!confirm("Supprimer définitivement " + (e.prenom||"") + " " + (e.nom||"") + " ?\nSes notes et paiements resteront dans l'historique.")) return;
+  try{
+    await db.collection("eleves").doc(id).delete();
+    closeModal();
+    toast("Élève supprimé");
+  }catch(err){ toast("Erreur lors de la suppression."); }
+}
+
+/* ---------- Notes : saisie par matière ---------- */
+$("notesCohorte").addEventListener("change", renderNotesGrid);
+$("notesTrimestre").addEventListener("change", renderNotesGrid);
+$("notesMatiere").addEventListener("change", renderNotesGrid);
+
+function renderNotesGrid(){
+  const cid = $("notesCohorte").value;
+  const trim = $("notesTrimestre").value;
+  const mat = $("notesMatiere").value;
+  const zone = $("notesGrid");
+  if(!cid || !mat){
+    zone.innerHTML = '<p class="muted" style="margin-top:12px">Choisissez une cohorte et une matière.</p>';
+    $("notesSaveRow").classList.add("hidden");
+    return;
+  }
+  const list = eleves.filter(e => e.cohorteId === cid && (e.statut === "actif" || e.statut === "diplome"));
+  if(!list.length){
+    zone.innerHTML = '<p class="muted" style="margin-top:12px">Aucun élève actif dans cette cohorte.</p>';
+    $("notesSaveRow").classList.add("hidden");
+    return;
+  }
+  const rows = list.map(e => {
+    const existante = notes.find(n => n.eleveId === e.id && String(n.trimestre) === String(trim) && n.matiere === mat);
+    const val = existante ? existante.note : "";
+    return '<tr><td>'+esc(e.prenom)+' '+esc(e.nom)+'</td>'
+      + '<td class="num"><input class="note-input" type="number" min="0" max="20" step="0.5" '
+      + 'data-eleve="'+e.id+'" value="'+esc(val)+'" inputmode="decimal"></td></tr>';
+  }).join("");
+  zone.innerHTML = '<table><thead><tr><th>Élève</th><th class="num">Note /20</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  $("notesSaveRow").classList.remove("hidden");
+}
+
+$("btnSaveNotes").addEventListener("click", async () => {
+  const cid = $("notesCohorte").value;
+  const trim = Number($("notesTrimestre").value);
+  const mat = $("notesMatiere").value;
+  const inputs = document.querySelectorAll("#notesGrid .note-input");
+  const batch = db.batch();
+  let count = 0;
+  inputs.forEach(inp => {
+    const v = inp.value.trim();
+    if(v === "") return;
+    let note = Number(v);
+    if(isNaN(note)) return;
+    if(note < 0) note = 0;
+    if(note > 20) note = 20;
+    const eid = inp.dataset.eleve;
+    const existante = notes.find(n => n.eleveId === eid && Number(n.trimestre) === trim && n.matiere === mat);
+    const data = { eleveId: eid, cohorteId: cid, trimestre: trim, matiere: mat, note: note, date: todayISO() };
+    if(existante){ batch.update(db.collection("notes").doc(existante.id), data); }
+    else{ batch.set(db.collection("notes").doc(), data); }
+    count++;
+  });
+  if(!count){ toast("Aucune note à enregistrer."); return; }
+  try{
+    await batch.commit();
+    toast(count + " note" + (count>1?"s":"") + " enregistrée" + (count>1?"s":"") + " ✓");
+  }catch(err){ toast("Erreur d'enregistrement des notes."); }
+});
+
+/* ---------- Bulletin ---------- */
+function renderBullSelect(){
+  const sel = $("bullEleve");
+  const prev = sel.value;
+  sel.innerHTML = eleves.filter(e => e.statut !== "preinscrit").map(e =>
+    '<option value="'+e.id+'">'+esc(e.prenom)+' '+esc(e.nom)+' — '+esc(cohorteNom(e.cohorteId))+'</option>').join("")
+    || '<option value="">Aucun élève</option>';
+  if(prev) sel.value = prev;
+}
+
+$("btnVoirBulletin").addEventListener("click", () => {
+  const eid = $("bullEleve").value;
+  const trim = Number($("bullTrimestre").value);
+  const e = eleves.find(x => x.id === eid);
+  if(!e){ toast("Choisissez un élève."); return; }
+  const mesNotes = notes.filter(n => n.eleveId === eid && Number(n.trimestre) === trim);
+  if(!mesNotes.length){
+    $("bulletinZone").innerHTML = '<p class="muted" style="margin-top:14px">Pas encore de notes pour ce trimestre.</p>';
+    return;
+  }
+  const moy = mesNotes.reduce((s,n) => s + (Number(n.note)||0), 0) / mesNotes.length;
+  const rows = mesNotes.map(n =>
+    '<tr><td>'+esc(n.matiere)+'</td><td class="num"><b>'+Number(n.note).toFixed(1)+'</b></td>'
+    + '<td>'+appreciation(Number(n.note))+'</td></tr>').join("");
+  const html =
+    '<div style="text-align:center;margin-bottom:14px">'
+    + '<div style="font-family:Marcellus,serif;font-size:22px;color:#232E5C">DAFD Académie</div>'
+    + '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5A607A">Djamil Academy of Fashion Design — Bakau New Town, The Gambia</div>'
+    + '<div style="border-top:2px dashed #C6A24B;margin:12px 0"></div>'
+    + '<div style="font-family:Marcellus,serif;font-size:18px">Bulletin — Trimestre '+trim+'</div></div>'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">'
+    + (e.photo ? '<img src="'+e.photo+'" class="photo-bulletin" alt="Photo">' : '')
+    + '<p style="margin:0"><b>Élève :</b> '+esc(e.prenom)+' '+esc(e.nom)+'<br><b>Cohorte :</b> '+esc(cohorteNom(e.cohorteId))+'</p></div>'
+    + '<div class="tablewrap"><table><thead><tr><th>Matière</th><th class="num">Note /20</th><th>Appréciation</th></tr></thead>'
+    + '<tbody>'+rows+'</tbody>'
+    + '<tfoot><tr><td><b>Moyenne générale</b></td><td class="num"><b>'+moy.toFixed(2)+'</b></td><td><b>'+appreciation(moy)+'</b></td></tr></tfoot>'
+    + '</table></div>'
+    + '<p style="margin-top:26px;text-align:right">Le Directeur<br><br>___________________</p>';
+  $("bulletinZone").innerHTML =
+    '<div class="card" style="margin-top:16px;border:1px solid #C6A24B">'+html+'</div>'
+    + '<button class="btn ghost" onclick="printBulletin()">🖨 Imprimer / PDF</button>';
+  $("printArea").innerHTML = html;
+});
+
+function printBulletin(){ window.print(); }
+
+/* ---------- Finances ---------- */
+$("btnAddPaiement").addEventListener("click", () => openPaiementForm(""));
+$("btnAddDepense").addEventListener("click", openDepenseForm);
+$("rapportMois").addEventListener("change", renderRapport);
+
+function renderFinances(){
+  const dir = role === "directeur";
+  // Paiements (suppression réservée au directeur)
+  $("listePaiements").innerHTML = paiements.length
+    ? paiements.slice(0,40).map(p => {
+        const e = eleves.find(x => x.id === p.eleveId);
+        return '<div class="list-item"><div class="li-main">'
+          + '<div class="li-title">'+(e ? esc(e.prenom)+' '+esc(e.nom) : "Élève supprimé")+'</div>'
+          + '<div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+(p.note?' · '+esc(p.note):'')+'</div></div>'
+          + '<div class="li-end"><span class="money pos">'+money(p.montant)+'</span>'
+          + (dir ? '<br><button class="linkbtn" onclick="deletePaiement(\''+p.id+'\')">Suppr.</button>' : '')
+          + '</div></div>';
+      }).join("")
+    : '<div class="empty">Aucun paiement enregistré.</div>';
+  // Dépenses : directeur = tout ; manager = uniquement ses propres saisies
+  const mesDep = dir ? depenses : depenses.filter(d => (d.enregistrePar||"") === (currentUser.email||""));
+  $("listeDepenses").innerHTML = mesDep.length
+    ? mesDep.slice(0,40).map(d =>
+        '<div class="list-item"><div class="li-main">'
+        + '<div class="li-title">'+esc(d.libelle)+'</div>'
+        + '<div class="li-sub">'+fmtDate(d.date)+' · '+esc(d.categorie||"")+'</div></div>'
+        + '<div class="li-end"><span class="money neg">'+money(d.montant)+'</span>'
+        + (dir ? '<br><button class="linkbtn" onclick="deleteDepense(\''+d.id+'\')">Suppr.</button>' : '')
+        + '</div></div>').join("")
+    : '<div class="empty">Aucune dépense enregistrée.</div>';
+  // Soldes (visibles par le manager-caissier)
+  const actifs = eleves.filter(e => e.statut === "actif" || e.statut === "preinscrit");
+  $("listeSoldes").innerHTML = actifs.length
+    ? actifs.map(e => {
+        const paye = totalPayeEleve(e.id);
+        const total = Number(e.fraisTotal)||0;
+        const reste = total - paye;
+        return '<div class="list-item">'+avatarHtml(e)
+          + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
+          + '<div class="li-sub">'+money(paye)+' / '+money(total)+'</div></div>'
+          + '<div class="li-end">'+(reste>0
+            ? '<span class="money neg">'+money(reste)+'</span><br><span class="muted">reste</span>'
+            : '<span class="badge solde">Soldé</span>')+'</div></div>';
+      }).join("")
+    : '<div class="empty">Aucun élève.</div>';
+  if(dir){
+    if(!$("rapportMois").value) $("rapportMois").value = todayISO().slice(0,7);
+    renderRapport();
+  }
+}
+
+function renderRapport(){
+  const mois = $("rapportMois").value;
+  if(!mois) return;
+  const encs = paiements.filter(p => String(p.date||"").slice(0,7) === mois);
+  const deps = depenses.filter(d => String(d.date||"").slice(0,7) === mois);
+  const totE = encs.reduce((s,p) => s+(Number(p.montant)||0), 0);
+  const totD = deps.reduce((s,d) => s+(Number(d.montant)||0), 0);
+  const parCat = {};
+  deps.forEach(d => {
+    const c = d.categorie || "Autres";
+    parCat[c] = (parCat[c]||0) + (Number(d.montant)||0);
+  });
+  $("rapportZone").innerHTML =
+    '<div class="grid2">'
+    + '<div class="stat ok"><div class="num" style="font-size:19px">'+money(totE)+'</div><div class="lbl">Encaissé ('+encs.length+')</div></div>'
+    + '<div class="stat alert"><div class="num" style="font-size:19px">'+money(totD)+'</div><div class="lbl">Dépensé ('+deps.length+')</div></div>'
+    + '</div>'
+    + '<div class="list-item" style="margin-top:10px"><div class="li-main"><b>Solde du mois</b></div>'
+    + '<div class="li-end money '+(totE-totD>=0?"pos":"neg")+'">'+money(totE-totD)+'</div></div>'
+    + (Object.keys(parCat).length
+        ? '<div class="section-title">Dépenses par catégorie</div>'
+          + Object.keys(parCat).map(c =>
+              '<div class="list-item"><div class="li-main">'+esc(c)+'</div><div class="li-end money">'+money(parCat[c])+'</div></div>').join("")
+        : "");
+}
+
+function openPaiementForm(preEleveId){
+  const opts = eleves.filter(e => e.statut !== "abandonne").map(e => {
+    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    return '<option value="'+e.id+'" '+(e.id===preEleveId?"selected":"")+'>'+esc(e.prenom)+' '+esc(e.nom)
+      + (reste>0 ? ' (reste '+money(reste)+')' : ' (soldé)')+'</option>';
+  }).join("");
+  openModal(
+    '<div class="close-row"><h2>Nouveau paiement</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<label>Élève</label><select id="pEleve">'+opts+'</select>'
+    + '<label>Montant (dalasis)</label><input type="number" id="pMontant" inputmode="numeric" placeholder="Ex : 5000">'
+    + '<label>Date du paiement</label><input type="date" id="pDate" value="'+todayISO()+'">'
+    + '<label>Mode</label><select id="pMode">'
+    + '<option>Espèces</option><option>Wave</option><option>Virement bancaire</option><option>Autre</option></select>'
+    + '<label>Note (optionnel)</label><input id="pNote" placeholder="Ex : 2e versement">'
+    + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
+    + '<button class="btn gold" onclick="savePaiement()">Enregistrer</button></div>'
+  );
+}
+
+async function savePaiement(){
+  const data = {
+    eleveId: $("pEleve").value,
+    montant: Number($("pMontant").value) || 0,
+    date: $("pDate").value,   // TOUJOURS la date choisie par l'utilisateur
+    mode: $("pMode").value,
+    note: $("pNote").value.trim(),
+    enregistrePar: currentUser.email || ""
+  };
+  if(!data.eleveId){ toast("Choisissez un élève."); return; }
+  if(data.montant <= 0){ toast("Entrez un montant valide."); return; }
+  if(!data.date){ toast("Choisissez la date du paiement."); return; }
+  try{
+    const dejaPayeAvant = totalPayeEleve(data.eleveId);
+    await db.collection("paiements").add(data);
+    const e = eleves.find(x => x.id === data.eleveId);
+    const total = e ? (Number(e.fraisTotal)||0) : 0;
+    const paye = dejaPayeAvant + data.montant;
+    const reste = total - paye;
+    const recu = "🧵 DAFD Académie — Reçu de paiement\n\n"
+      + "Élève : " + (e ? (e.prenom||"")+" "+(e.nom||"") : "") + "\n"
+      + "Montant reçu : " + money(data.montant) + " (" + data.mode + ")\n"
+      + "Date : " + fmtDate(data.date) + "\n"
+      + "Total payé : " + money(paye) + " / " + money(total) + "\n"
+      + (reste > 0 ? "Reste à payer : " + money(reste) : "✅ Scolarité entièrement soldée") + "\n\n"
+      + "Merci de votre confiance !\nDjamil Academy of Fashion Design — Bakau New Town";
+    window._recuTel = e ? (e.telephone || "") : "";
+    window._recuTexte = recu;
+    openModal(
+      '<div class="close-row"><h2>Paiement enregistré ✓</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+      + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b>.'
+      + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Scolarité soldée 🎉') + '</p>'
+      + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(window._recuTel, window._recuTexte);closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
+      + '<div style="margin-top:10px"><button class="btn ghost" style="width:100%" onclick="closeModal()">Fermer sans envoyer</button></div>'
+    );
+    toast("Paiement de " + money(data.montant) + " enregistré ✓");
+  }catch(err){ toast("Erreur d'enregistrement du paiement."); }
+}
+
+async function deletePaiement(id){
+  if(role !== "directeur"){ toast("Seul le directeur peut supprimer un paiement."); return; }
+  if(!confirm("Supprimer ce paiement ?")) return;
+  try{ await db.collection("paiements").doc(id).delete(); toast("Paiement supprimé"); }
+  catch(err){ toast("Erreur lors de la suppression."); }
+}
+
+function openDepenseForm(){
+  const cats = (role === "directeur"
+    ? ["Salaires","Matériel & tissus","Loyer","Électricité & eau","Internet & téléphone","Transport","Autres"]
+    : ["Matériel & tissus","Électricité & eau","Internet & téléphone","Transport","Autres"]);
+  openModal(
+    '<div class="close-row"><h2>Nouvelle dépense</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<label>Libellé</label><input id="dLibelle" placeholder="Ex : Tissu pour ateliers">'
+    + '<label>Catégorie</label><select id="dCategorie">'
+    + cats.map(c => '<option>'+c+'</option>').join("")
+    + '</select>'
+    + '<label>Montant (dalasis)</label><input type="number" id="dMontant" inputmode="numeric">'
+    + '<label>Date</label><input type="date" id="dDate" value="'+todayISO()+'">'
+    + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
+    + '<button class="btn gold" onclick="saveDepense()">Enregistrer</button></div>'
+  );
+}
+
+async function saveDepense(){
+  const data = {
+    libelle: $("dLibelle").value.trim(),
+    categorie: $("dCategorie").value,
+    montant: Number($("dMontant").value) || 0,
+    date: $("dDate").value,
+    enregistrePar: currentUser.email || ""
+  };
+  if(!data.libelle){ toast("Entrez un libellé."); return; }
+  if(data.montant <= 0){ toast("Entrez un montant valide."); return; }
+  try{
+    await db.collection("depenses").add(data);
+    closeModal();
+    toast("Dépense enregistrée ✓");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+}
+
+async function deleteDepense(id){
+  if(role !== "directeur"){ toast("Seul le directeur peut supprimer une dépense."); return; }
+  if(!confirm("Supprimer cette dépense ?")) return;
+  try{ await db.collection("depenses").doc(id).delete(); toast("Dépense supprimée"); }
+  catch(err){ toast("Erreur lors de la suppression."); }
+}
+
+/* ---------- Cohortes ---------- */
+$("btnAddCohorte").addEventListener("click", () => openCohorteForm(null));
+
+function renderCohortesList(){
+  $("listeCohortes").innerHTML = cohortes.length
+    ? cohortes.map(c => {
+        const n = eleves.filter(e => e.cohorteId === c.id).length;
+        return '<div class="list-item"><div class="li-main">'
+          + '<div class="li-title">'+esc(c.nom)+'</div>'
+          + '<div class="li-sub">Trimestre actuel : T'+(c.trimestreActuel||1)+' · '+n+' élève'+(n>1?"s":"")+'</div></div>'
+          + '<div class="li-end"><button class="linkbtn" onclick="openCohorteForm(\''+c.id+'\')">Modifier</button></div></div>';
+      }).join("")
+    : '<p class="muted">Aucune cohorte. Exemple : « Cohorte 2024-2026 » pour vos élèves actuels, « Cohorte 2026-2028 » pour la prochaine rentrée.</p>';
+}
+
+function openCohorteForm(id){
+  const c = id ? cohortes.find(x => x.id === id) : null;
+  let trimOpts = "";
+  for(let i = 1; i <= 6; i++){
+    trimOpts += '<option value="'+i+'" '+(c && Number(c.trimestreActuel)===i?"selected":"")+'>Trimestre '+i+'</option>';
+  }
+  openModal(
+    '<div class="close-row"><h2>'+(c?"Modifier la cohorte":"Nouvelle cohorte")+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<label>Nom de la cohorte</label><input id="cNom" value="'+esc(c?c.nom:"")+'" placeholder="Ex : Cohorte 2024-2026">'
+    + '<label>Année de début</label><input type="number" id="cAnnee" value="'+esc(c?c.anneeDebut||"":new Date().getFullYear())+'">'
+    + '<label>Trimestre actuel</label><select id="cTrim">'+trimOpts+'</select>'
+    + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
+    + '<button class="btn gold" onclick="saveCohorte(\''+(id||"")+'\')">Enregistrer</button></div>'
+    + (c ? '<div style="margin-top:14px;text-align:center"><button class="linkbtn" style="color:#B4432F" onclick="deleteCohorte(\''+id+'\')">Supprimer cette cohorte</button></div>' : '')
+  );
+}
+
+async function saveCohorte(id){
+  const data = {
+    nom: $("cNom").value.trim(),
+    anneeDebut: Number($("cAnnee").value) || new Date().getFullYear(),
+    trimestreActuel: Number($("cTrim").value) || 1
+  };
+  if(!data.nom){ toast("Entrez un nom de cohorte."); return; }
+  try{
+    if(id){ await db.collection("cohortes").doc(id).update(data); }
+    else{ await db.collection("cohortes").add(data); }
+    closeModal();
+    toast("Cohorte enregistrée ✓");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+}
+
+async function deleteCohorte(id){
+  const n = eleves.filter(e => e.cohorteId === id).length;
+  if(n > 0){ toast("Impossible : " + n + " élève(s) dans cette cohorte."); return; }
+  if(!confirm("Supprimer cette cohorte ?")) return;
+  try{ await db.collection("cohortes").doc(id).delete(); closeModal(); toast("Cohorte supprimée"); }
+  catch(err){ toast("Erreur lors de la suppression."); }
+}
+
+/* ---------- Paramètres : matières & accès ---------- */
+$("btnSaveAdminCode").addEventListener("click", async () => {
+  if(role !== "directeur"){ toast("🔒 Réservé au directeur."); return; }
+  const ancien = prompt("🔐 Entrez d'abord le code actuel :");
+  if(ancien === null) return;
+  if(String(ancien).trim() !== adminCode){ toast("Code actuel incorrect."); return; }
+  const nouveau = $("newAdminCode").value.trim();
+  if(nouveau.length < 4){ toast("Le nouveau code doit avoir au moins 4 caractères."); return; }
+  try{
+    await db.collection("config").doc("securite").set({adminCode: nouveau});
+    $("newAdminCode").value = "";
+    toast("Code de sécurité changé ✓");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+});
+
+$("btnSaveMatieres").addEventListener("click", async () => {
+  const liste = $("matieresList").value.split("\n").map(x => x.trim()).filter(Boolean);
+  if(!liste.length){ toast("Entrez au moins une matière."); return; }
+  try{
+    await db.collection("config").doc("matieres").set({liste: liste});
+    toast("Matières enregistrées ✓");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+});
+
+$("btnSaveDirecteurs").addEventListener("click", async () => {
+  const liste = $("directeursList").value.split("\n").map(x => x.trim().toLowerCase()).filter(Boolean);
+  if(!liste.length){ toast("Il faut au moins un email directeur."); return; }
+  if(!liste.includes((currentUser.email||"").toLowerCase())){
+    if(!confirm("Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?")) return;
+  }
+  try{
+    await db.collection("config").doc("acces").set({directeurs: liste});
+    toast("Accès enregistrés ✓ (effet à la prochaine connexion)");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+});
+</script>
+</body>
+</html>
