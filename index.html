@@ -144,6 +144,23 @@ nav.bottom button.active::after{
   width:42px;height:42px;border-radius:50%;flex-shrink:0;
   background:var(--indigo);color:var(--gold);font-weight:700;
   display:flex;align-items:center;justify-content:center;font-size:15px;
+  overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.photo-row{display:flex;align-items:center;gap:14px;margin:6px 0 12px}
+.photo-preview{
+  width:86px;height:86px;border-radius:12px;flex-shrink:0;overflow:hidden;
+  background:var(--indigo);color:var(--gold);font-weight:700;font-size:26px;
+  display:flex;align-items:center;justify-content:center;border:2px solid var(--gold);
+}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-fiche{
+  width:96px;height:96px;border-radius:12px;object-fit:cover;
+  border:2px solid var(--gold);display:block;margin:0 auto 10px;
+}
+.photo-bulletin{
+  width:76px;height:76px;border-radius:8px;object-fit:cover;
+  border:1.5px solid #C6A24B;
 }
 .li-main{flex:1;min-width:0}
 .li-title{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -426,6 +443,14 @@ td.num,th.num{text-align:right}
           <button class="btn small" id="btnSaveDirecteurs">Enregistrer les accès</button>
         </div>
       </div>
+      <div class="card" id="securiteCard">
+        <h2>Code de sécurité administrateur</h2>
+        <p class="muted">Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.</p>
+        <input type="password" id="newAdminCode" placeholder="Nouveau code" inputmode="numeric" style="margin-top:10px">
+        <div style="margin-top:12px">
+          <button class="btn small" id="btnSaveAdminCode">Changer le code</button>
+        </div>
+      </div>
       <div class="card">
         <h2>Compte</h2>
         <p class="muted" id="accountInfo"></p>
@@ -479,6 +504,7 @@ let currentUser = null;
 let role = "manager"; // "directeur" ou "manager"
 let cohortes = [];
 let eleves = [];
+let adminCode = "1234"; // code de sécurité par défaut, modifiable dans Plus > Sécurité
 let paiements = [];
 let depenses = [];
 let notes = [];
@@ -534,7 +560,55 @@ function appreciation(moy){
   return "Insuffisant";
 }
 function statutLabel(s){
-  return {actif:"Actif", preinscrit:"Préinscrit 26-27", diplome:"Diplômé", abandonne:"Abandon"}[s] || s;
+  return {actif:"Actif", preinscrit:"Préinscrit 26-27", diplome:"Diplômé", abandonne:"Abandon"}[s] || "—";
+}
+function avatarHtml(e){
+  if(e && e.photo) return '<div class="avatar"><img src="'+e.photo+'" alt=""></div>';
+  return '<div class="avatar">'+initiales(e?e.nom:"", e?e.prenom:"")+'</div>';
+}
+
+/* ---------- Photo d'identité (compressée, stockée dans Firestore) ---------- */
+window._photoEleve = "";
+function photoPreviewHtml(){
+  if(window._photoEleve) return '<img src="'+window._photoEleve+'" alt="Photo">';
+  return '📷';
+}
+function handlePhotoInput(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ toast("Choisissez une image."); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const MAX = 300;
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; } }
+      else{ if(h > MAX){ w = Math.round(w * MAX / h); h = MAX; } }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      let data = canvas.toDataURL("image/jpeg", 0.72);
+      if(data.length > 140000){ data = canvas.toDataURL("image/jpeg", 0.5); }
+      window._photoEleve = data;
+      const prev = $("photoPreview");
+      if(prev) prev.innerHTML = photoPreviewHtml();
+      const btn = $("btnRetirerPhoto");
+      if(btn) btn.classList.remove("hidden");
+      toast("Photo ajoutée ✓");
+    };
+    img.onerror = function(){ toast("Impossible de lire cette image."); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function(){ toast("Erreur de lecture du fichier."); };
+  reader.readAsDataURL(file);
+}
+function retirerPhoto(){
+  window._photoEleve = "";
+  const prev = $("photoPreview");
+  if(prev) prev.innerHTML = photoPreviewHtml();
+  const btn = $("btnRetirerPhoto");
+  if(btn) btn.classList.add("hidden");
 }
 function cohorteNom(id){
   const c = cohortes.find(x => x.id === id);
@@ -630,6 +704,7 @@ function applyRoleUI(){
   const fin = role === "directeur";
   $("dashFinCard").classList.toggle("hidden", !fin);
   $("rolesCard").classList.toggle("hidden", !fin);
+  $("securiteCard").classList.toggle("hidden", !fin);
   $("pillRapport").classList.toggle("hidden", !fin);
   $("accountInfo").textContent = "Connecté : " + (currentUser.email||"") + " — rôle : " + (fin ? "Directeur (accès complet)" : "Manager-caissier (encaissements et dépenses du jour — pas de rapports ni salaires)");
 }
@@ -657,6 +732,9 @@ function startData(){
     matieres = (s.exists && Array.isArray(s.data().liste) && s.data().liste.length) ? s.data().liste : MATIERES_DEFAUT.slice();
     renderMatieresSelect();
     $("matieresList").value = matieres.join("\n");
+  }));
+  unsubs.push(db.collection("config").doc("securite").onSnapshot(s => {
+    adminCode = (s.exists && s.data().adminCode) ? String(s.data().adminCode) : "1234";
   }));
   unsubs.push(db.collection("paiements").onSnapshot(s => {
     paiements = s.docs.map(d => ({id:d.id, ...d.data()}));
@@ -816,7 +894,7 @@ function renderEleves(){
     const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
     const fin = reste > 0 ? '<span class="badge retard">Reste '+money(reste)+'</span>' : '<span class="badge solde">Frais soldés</span>';
     return '<div class="list-item" onclick="openFiche(\''+e.id+'\')" style="cursor:pointer">'
-      + '<div class="avatar">'+initiales(e.nom,e.prenom)+'</div>'
+      + avatarHtml(e)
       + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
       + '<div class="li-sub">'+esc(cohorteNom(e.cohorteId))+' · '+esc(e.telephone||"")+'</div></div>'
       + '<div class="li-end"><span class="badge '+esc(e.statut)+'">'+statutLabel(e.statut)+'</span><br>'+fin+'</div></div>';
@@ -837,9 +915,18 @@ $("modalBg").addEventListener("click", e => { if(e.target === $("modalBg")) clos
 /* ---------- Formulaire élève ---------- */
 function openEleveForm(id){
   const e = id ? eleves.find(x => x.id === id) : null;
+  window._photoEleve = (e && e.photo) ? e.photo : "";
   const cohOpts = cohortes.map(c => '<option value="'+c.id+'" '+(e && e.cohorteId===c.id?"selected":"")+'>'+esc(c.nom)+'</option>').join("");
   openModal(
     '<div class="close-row"><h2>'+(e?"Modifier l'élève":"Nouvel élève")+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<label>Photo d\'identité</label>'
+    + '<div class="photo-row">'
+    + '<div class="photo-preview" id="photoPreview">'+photoPreviewHtml()+'</div>'
+    + '<div>'
+    + '<input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoInput(this)">'
+    + '<button class="btn small ghost" type="button" onclick="$(\'photoInput\').click()">📷 '+(window._photoEleve?"Changer":"Ajouter")+' la photo</button>'
+    + '<button class="btn small ghost '+(window._photoEleve?"":"hidden")+'" type="button" id="btnRetirerPhoto" onclick="retirerPhoto()" style="margin-left:6px">✕ Retirer</button>'
+    + '</div></div>'
     + '<label>Prénom</label><input id="fPrenom" value="'+esc(e?e.prenom:"")+'">'
     + '<label>Nom</label><input id="fNom" value="'+esc(e?e.nom:"")+'">'
     + '<div class="grid2"><div><label>Sexe</label><select id="fSexe">'
@@ -865,6 +952,7 @@ function openEleveForm(id){
 }
 
 async function saveEleve(id){
+  if(id && role !== "directeur"){ toast("🔒 Seul le directeur peut modifier une fiche élève."); return; }
   const data = {
     prenom: $("fPrenom").value.trim(),
     nom: $("fNom").value.trim(),
@@ -876,7 +964,8 @@ async function saveEleve(id){
     cohorteId: $("fCohorte").value,
     statut: $("fStatut").value,
     dateInscription: $("fInscription").value,
-    remarques: $("fRemarques").value.trim()
+    remarques: $("fRemarques").value.trim(),
+    photo: window._photoEleve || ""
   };
   if($("fFrais")) data.fraisTotal = Number($("fFrais").value) || 0;
   if(!data.prenom && !data.nom){ toast("Entrez au moins un nom."); return; }
@@ -924,6 +1013,7 @@ function openFiche(id){
 
   openModal(
     '<div class="close-row"><h2>'+esc(e.prenom)+' '+esc(e.nom)+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + (e.photo ? '<img src="'+e.photo+'" class="photo-fiche" alt="Photo">' : '')
     + '<p class="muted">'+esc(cohorteNom(e.cohorteId))+' · <span class="badge '+esc(e.statut)+'">'+statutLabel(e.statut)+'</span></p>'
     + '<div class="section-title">Contact</div>'
     + '<div class="list-item"><div class="li-main">Téléphone</div><div class="li-end">'+esc(e.telephone||"—")+'</div></div>'
@@ -933,14 +1023,23 @@ function openFiche(id){
     + (e.remarques ? '<p class="muted" style="margin-top:8px">'+esc(e.remarques)+'</p>' : '')
     + '<div class="section-title">Résultats</div>' + notesHtml
     + finHtml
-    + '<div class="actions"><button class="btn ghost" onclick="closeModal();openEleveForm(\''+id+'\')">Modifier</button>'
-    + '<button class="btn danger" onclick="deleteEleve(\''+id+'\')">Supprimer</button></div>'
+    + '<div class="actions">'
+    + (role === "directeur"
+        ? '<button class="btn ghost" onclick="closeModal();openEleveForm(\''+id+'\')">Modifier</button>'
+          + '<button class="btn danger" onclick="deleteEleve(\''+id+'\')">Supprimer</button>'
+        : '<button class="btn ghost" disabled style="opacity:.45;cursor:not-allowed" title="Réservé au directeur">🔒 Modifier</button>'
+          + '<button class="btn danger" disabled style="opacity:.45;cursor:not-allowed" title="Réservé au directeur">🔒 Supprimer</button>')
+    + '</div>'
   );
 }
 
 async function deleteEleve(id){
+  if(role !== "directeur"){ toast("🔒 Seul le directeur peut supprimer un élève."); return; }
   const e = eleves.find(x => x.id === id);
   if(!e) return;
+  const code = prompt("🔐 Code de sécurité administrateur :");
+  if(code === null) return; // annulé
+  if(String(code).trim() !== adminCode){ toast("Code incorrect. Suppression annulée."); return; }
   if(!confirm("Supprimer définitivement " + (e.prenom||"") + " " + (e.nom||"") + " ?\nSes notes et paiements resteront dans l'historique.")) return;
   try{
     await db.collection("eleves").doc(id).delete();
@@ -1039,7 +1138,9 @@ $("btnVoirBulletin").addEventListener("click", () => {
     + '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5A607A">Djamil Academy of Fashion Design — Bakau New Town, The Gambia</div>'
     + '<div style="border-top:2px dashed #C6A24B;margin:12px 0"></div>'
     + '<div style="font-family:Marcellus,serif;font-size:18px">Bulletin — Trimestre '+trim+'</div></div>'
-    + '<p><b>Élève :</b> '+esc(e.prenom)+' '+esc(e.nom)+'<br><b>Cohorte :</b> '+esc(cohorteNom(e.cohorteId))+'</p>'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">'
+    + (e.photo ? '<img src="'+e.photo+'" class="photo-bulletin" alt="Photo">' : '')
+    + '<p style="margin:0"><b>Élève :</b> '+esc(e.prenom)+' '+esc(e.nom)+'<br><b>Cohorte :</b> '+esc(cohorteNom(e.cohorteId))+'</p></div>'
     + '<div class="tablewrap"><table><thead><tr><th>Matière</th><th class="num">Note /20</th><th>Appréciation</th></tr></thead>'
     + '<tbody>'+rows+'</tbody>'
     + '<tfoot><tr><td><b>Moyenne générale</b></td><td class="num"><b>'+moy.toFixed(2)+'</b></td><td><b>'+appreciation(moy)+'</b></td></tr></tfoot>'
@@ -1090,7 +1191,7 @@ function renderFinances(){
         const paye = totalPayeEleve(e.id);
         const total = Number(e.fraisTotal)||0;
         const reste = total - paye;
-        return '<div class="list-item"><div class="avatar">'+initiales(e.nom,e.prenom)+'</div>'
+        return '<div class="list-item">'+avatarHtml(e)
           + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
           + '<div class="li-sub">'+money(paye)+' / '+money(total)+'</div></div>'
           + '<div class="li-end">'+(reste>0
@@ -1175,11 +1276,13 @@ async function savePaiement(){
       + "Total payé : " + money(paye) + " / " + money(total) + "\n"
       + (reste > 0 ? "Reste à payer : " + money(reste) : "✅ Scolarité entièrement soldée") + "\n\n"
       + "Merci de votre confiance !\nDjamil Academy of Fashion Design — Bakau New Town";
+    window._recuTel = e ? (e.telephone || "") : "";
+    window._recuTexte = recu;
     openModal(
       '<div class="close-row"><h2>Paiement enregistré ✓</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
       + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b>.'
       + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Scolarité soldée 🎉') + '</p>'
-      + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(\'' + esc(e ? e.telephone||"" : "") + '\',' + JSON.stringify(recu).replace(/'/g,"&#39;") + ');closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
+      + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(window._recuTel, window._recuTexte);closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
       + '<div style="margin-top:10px"><button class="btn ghost" style="width:100%" onclick="closeModal()">Fermer sans envoyer</button></div>'
     );
     toast("Paiement de " + money(data.montant) + " enregistré ✓");
@@ -1290,6 +1393,20 @@ async function deleteCohorte(id){
 }
 
 /* ---------- Paramètres : matières & accès ---------- */
+$("btnSaveAdminCode").addEventListener("click", async () => {
+  if(role !== "directeur"){ toast("🔒 Réservé au directeur."); return; }
+  const ancien = prompt("🔐 Entrez d'abord le code actuel :");
+  if(ancien === null) return;
+  if(String(ancien).trim() !== adminCode){ toast("Code actuel incorrect."); return; }
+  const nouveau = $("newAdminCode").value.trim();
+  if(nouveau.length < 4){ toast("Le nouveau code doit avoir au moins 4 caractères."); return; }
+  try{
+    await db.collection("config").doc("securite").set({adminCode: nouveau});
+    $("newAdminCode").value = "";
+    toast("Code de sécurité changé ✓");
+  }catch(err){ toast("Erreur d'enregistrement."); }
+});
+
 $("btnSaveMatieres").addEventListener("click", async () => {
   const liste = $("matieresList").value.split("\n").map(x => x.trim()).filter(Boolean);
   if(!liste.length){ toast("Entrez au moins une matière."); return; }
