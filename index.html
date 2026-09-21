@@ -177,6 +177,25 @@ nav.bottom button.active::after{
 .badge.retard{background:#F5E3DF;color:var(--danger)}
 .badge.solde{background:#E4EFE7;color:var(--success)}
 
+/* ---------- Suivi des frais par poste ---------- */
+.badge.part{background:#F8ECD3;color:var(--warn)}
+.badge.futur{background:#ECEBE6;color:var(--ink-soft)}
+.list-item.st-ok,.solde-card.st-ok,.list-item.st-part,.solde-card.st-part,.list-item.st-no,.solde-card.st-no,.list-item.st-futur{border-left:5px solid var(--line);padding-left:10px}
+.list-item.st-ok,.solde-card.st-ok{border-left-color:var(--success)}
+.list-item.st-part,.solde-card.st-part{border-left-color:var(--warn)}
+.list-item.st-no,.solde-card.st-no{border-left-color:var(--danger)}
+.solde-card{padding:12px 4px 12px 10px;border-bottom:1px solid var(--line);border-left:5px solid var(--line)}
+.solde-card:last-child{border-bottom:none}
+.solde-top{display:flex;align-items:center;gap:12px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{font-size:12px;font-weight:700;padding:5px 10px;border-radius:14px;border:1.5px solid var(--line);white-space:nowrap}
+.chip.ok{background:#E4EFE7;color:var(--success);border-color:var(--success)}
+.chip.part{background:#F8ECD3;color:var(--warn);border-color:var(--warn)}
+.chip.no{background:#F5E3DF;color:var(--danger);border-color:var(--danger)}
+.chip.futur{background:#F4F2EC;color:var(--ink-soft);font-weight:600}
+.fchip{padding:7px 14px;border-radius:18px;font-weight:700;font-size:13px;background:var(--paper);color:var(--ink-soft);border:1px solid var(--line)}
+.fchip.sel{background:var(--indigo);color:var(--gold);border-color:var(--indigo)}
+
 /* ---------- Trimester tracker (signature) ---------- */
 .trimline{display:flex;align-items:center;margin:14px 2px 4px}
 .trim-dot{
@@ -436,6 +455,17 @@ td.num,th.num{text-align:right}
           <button class="btn small" id="btnSaveMatieres">Enregistrer les matières</button>
         </div>
       </div>
+      <div class="card" id="tarifsCard">
+        <h2>Tarifs de scolarité</h2>
+        <p class="muted">Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).</p>
+        <label>Inscription</label><input type="number" id="tInscription" inputmode="numeric">
+        <label>Uniforme</label><input type="number" id="tUniforme" inputmode="numeric">
+        <label>Réparation machine</label><input type="number" id="tMachine" inputmode="numeric">
+        <label>Chaque trimestre</label><input type="number" id="tTrimestre" inputmode="numeric">
+        <div style="margin-top:12px">
+          <button class="btn small" id="btnSaveTarifs">Enregistrer les tarifs</button>
+        </div>
+      </div>
       <div class="card" id="rolesCard">
         <h2>Accès directeur</h2>
         <p class="muted">Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.</p>
@@ -586,7 +616,11 @@ const DICO_EN = {
   "Cohortes":"Cohorts","Nouvelle cohorte":"New cohort","+ Nouvelle cohorte":"+ New cohort","Nom de la cohorte":"Cohort name","Année de début":"Start year","Supprimer cette cohorte":"Delete this cohort","Matières enseignées":"Subjects taught","Enregistrer les matières":"Save subjects","Accès directeur":"Director access","Enregistrer les accès":"Save access","Code de sécurité administrateur":"Administrator security code","Changer le code":"Change code","Compte":"Account","Se déconnecter":"Log out","Se connecter":"Log in","Email":"Email","Mot de passe":"Password",
   "reste":"balance","Une matière par ligne. Utilisées pour la saisie des notes et les bulletins.":"One subject per line. Used for grade entry and report cards.",
   "Nom et téléphone":"Name and phone","Nouveau code":"New code","Ex : Cohorte 2024-2026":"E.g.: Cohort 2024-2026","Ex : Tissu pour ateliers":"E.g.: Fabric for workshops","Ex : 2e versement":"E.g.: 2nd installment",
-  "Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.":"This code is required before any student deletion. Keep it confidential."
+  "Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.":"This code is required before any student deletion. Keep it confidential.",
+  "Tout payé":"All paid","Doivent encore":"Still owe","Tous":"All","Non payé":"Unpaid","Payé ✓":"Paid ✓","À venir":"Upcoming","Avance":"Advance","Versement":"Payment","Versements":"Payments",
+  "Inscription":"Registration","Uniforme":"Uniform","Réparation machine":"Machine repair","Payer quoi ?":"Payment for","Autre / avance libre":"Other / free advance",
+  "Total dû à ce jour":"Total due to date","Tarifs de scolarité":"Tuition rates","Enregistrer les tarifs":"Save rates","Chaque trimestre":"Each term",
+  "Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).":"These amounts are used to work out, for each student, what is paid and what is still due (in dalasis)."
 };
 let _translating = false;
 function traduirePage(){
@@ -690,6 +724,72 @@ function totalPayeEleve(eleveId){
   return paiements.filter(p => p.eleveId === eleveId).reduce((s,p) => s + (Number(p.montant)||0), 0);
 }
 
+/* ---------- Frais par poste : inscription, uniforme, machine, trimestres ---------- */
+const TARIFS_DEFAUT = {inscription:2500, uniforme:200, machine:500, trimestre:19000};
+let tarifs = Object.assign({}, TARIFS_DEFAUT);
+let soldesFiltre = "tous";
+
+function num(n){ return (Number(n)||0).toLocaleString("fr-FR", {maximumFractionDigits:0}); }
+function posteLabel(k){
+  if(k === "inscription") return "Inscription";
+  if(k === "uniforme") return "Uniforme";
+  if(k === "machine") return "Réparation machine";
+  if(/^T[1-6]$/.test(k || "")) return "Trimestre " + k.slice(1);
+  return "Avance / autre";
+}
+/* Liste des postes d'un élève. Les trimestres sont « dus » jusqu'au trimestre
+   actuel de sa cohorte ; les suivants sont « à venir » (payables d'avance). */
+function postesEleve(e){
+  const c = cohortes.find(x => x.id === e.cohorteId);
+  const tCur = c ? (Number(c.trimestreActuel) || 1) : 1;
+  const L = [
+    {k:"inscription", court:"Inscr.", label:"Inscription", montant:Number(tarifs.inscription)||0, du:true},
+    {k:"uniforme", court:"Uniforme", label:"Uniforme", montant:Number(tarifs.uniforme)||0, du:true},
+    {k:"machine", court:"Machine", label:"Réparation machine", montant:Number(tarifs.machine)||0, du:true}
+  ];
+  for(let i = 1; i <= 6; i++){
+    L.push({k:"T"+i, court:"T"+i, label:"Trimestre "+i, montant:Number(tarifs.trimestre)||0, du:i <= tCur});
+  }
+  return L;
+}
+/* Situation d'un élève : chaque poste payé / avance / non payé / à venir.
+   « extra » = paiements simulés (pour calculer le reçu avant l'écriture). */
+function situationEleve(e, extra){
+  const postes = postesEleve(e);
+  const mine = paiements.filter(p => p.eleveId === e.id).concat(extra || []);
+  const par = {};
+  let libre = 0, totalPaye = 0;
+  mine.forEach(p => {
+    const m = Number(p.montant) || 0;
+    totalPaye += m;
+    if(p.poste && postes.some(x => x.k === p.poste)) par[p.poste] = (par[p.poste] || 0) + m;
+    else libre += m;
+  });
+  postes.forEach(x => { x.paye = par[x.k] || 0; });
+  /* Versements sans poste (anciens paiements, avances libres) : ils comblent,
+     dans l'ordre, les postes déjà dus qui ne sont pas soldés. */
+  postes.forEach(x => {
+    if(x.du && libre > 0 && x.paye < x.montant){
+      const a = Math.min(libre, x.montant - x.paye);
+      x.paye += a; libre -= a;
+    }
+  });
+  let totalDu = 0, reste = 0;
+  postes.forEach(x => {
+    x.reste = Math.max(0, x.montant - x.paye);
+    x.etat = x.paye >= x.montant ? "ok" : (x.paye > 0 ? "part" : (x.du ? "no" : "futur"));
+    if(x.du){ totalDu += x.montant; reste += x.reste; }
+  });
+  const etat = reste === 0 ? "ok" : (totalPaye > 0 ? "part" : "no");
+  return {postes:postes, totalDu:totalDu, reste:reste, totalPaye:totalPaye, etat:etat};
+}
+function badgePoste(x){
+  if(x.etat === "ok") return '<span class="badge solde">Payé ✓</span>';
+  if(x.etat === "part") return '<span class="badge part">Avance</span>';
+  if(x.etat === "no") return '<span class="badge retard">Non payé</span>';
+  return '<span class="badge futur">À venir</span>';
+}
+
 /* ---------- WhatsApp (reçus & relances) ---------- */
 function telWa(t){
   t = String(t||"").replace(/[^0-9]/g,"");
@@ -706,10 +806,12 @@ function waOpen(phone, text){
 function relancer(eleveId){
   const e = eleves.find(x => x.id === eleveId);
   if(!e) return;
-  const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(eleveId);
+  const s = situationEleve(e);
+  if(s.reste <= 0){ toast("Tout est déjà payé ✓"); return; }
+  const dus = s.postes.filter(x => x.du && x.reste > 0).map(x => "• " + x.label + " : " + money(x.reste)).join("\n");
   const msg = "🧵 DAFD Académie — Rappel de scolarité\n\n"
     + "Bonjour " + (e.prenom||"") + ",\n"
-    + "Il reste " + money(reste) + " à régler pour votre formation.\n"
+    + "Il reste " + money(s.reste) + " à régler :\n" + dus + "\n"
     + "Merci de passer à l'académie pour régulariser.\n\n"
     + "Djamil Academy of Fashion Design — Bakau New Town";
   waOpen(e.telephone, msg);
@@ -776,6 +878,7 @@ function applyRoleUI(){
   const fin = role === "directeur";
   $("dashFinCard").classList.toggle("hidden", !fin);
   $("rolesCard").classList.toggle("hidden", !fin);
+  $("tarifsCard").classList.toggle("hidden", !fin);
   $("securiteCard").classList.toggle("hidden", !fin);
   $("pillRapport").classList.toggle("hidden", !fin);
   $("accountInfo").textContent = "Connecté : " + (currentUser.email||"") + " — rôle : " + (fin ? "Directeur (accès complet)" : "Manager-caissier (encaissements et dépenses du jour — pas de rapports ni salaires)");
@@ -813,6 +916,14 @@ function startData(){
     paiements.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
     renderAll();
   }));
+  unsubs.push(db.collection("config").doc("tarifs").onSnapshot(s => {
+    tarifs = Object.assign({}, TARIFS_DEFAUT, s.exists ? s.data() : {});
+    if($("tInscription")){
+      $("tInscription").value = tarifs.inscription; $("tUniforme").value = tarifs.uniforme;
+      $("tMachine").value = tarifs.machine; $("tTrimestre").value = tarifs.trimestre;
+    }
+    renderAll();
+  }, err => {}));
   unsubs.push(db.collection("depenses").onSnapshot(s => {
     depenses = s.docs.map(d => ({id:d.id, ...d.data()}));
     depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
@@ -895,7 +1006,7 @@ function renderDash(){
     const encMois = paiements.filter(p => String(p.date||"").slice(0,7) === mois).reduce((s,p) => s+(Number(p.montant)||0),0);
     stats += '<div class="stat ok"><div class="num" style="font-size:20px">'+money(encMois)+'</div><div class="lbl">Encaissé ce mois</div></div>';
   }
-  const retardsN = actifs.filter(e => (Number(e.fraisTotal)||0) - totalPayeEleve(e.id) > 0).length;
+  const retardsN = actifs.filter(e => situationEleve(e).reste > 0).length;
   stats += '<div class="stat alert"><div class="num">'+retardsN+'</div><div class="lbl">Élèves en retard</div></div>';
   $("dashStats").innerHTML = stats;
 
@@ -929,7 +1040,7 @@ function renderDash(){
       + '<div class="list-item"><div class="li-main"><b>Solde du mois</b></div><div class="li-end money '+(solde>=0?"pos":"neg")+'">'+money(solde)+'</div></div>';
   }
   const retards = eleves.filter(e => e.statut === "actif").map(e => {
-    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    const reste = situationEleve(e).reste;
     return {e, reste};
   }).filter(x => x.reste > 0).sort((a,b) => b.reste - a.reste);
   $("dashRetards").innerHTML = retards.length
@@ -963,9 +1074,12 @@ function renderEleves(){
     return;
   }
   $("listeEleves").innerHTML = list.map(e => {
-    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
-    const fin = reste > 0 ? '<span class="badge retard">Reste '+money(reste)+'</span>' : '<span class="badge solde">Frais soldés</span>';
-    return '<div class="list-item" onclick="openFiche(\''+e.id+'\')" style="cursor:pointer">'
+    const suivi = (e.statut === "actif" || e.statut === "preinscrit");
+    const s = suivi ? situationEleve(e) : null;
+    const fin = !s ? '' : (s.reste > 0
+      ? '<span class="badge '+(s.etat === "part" ? "part" : "retard")+'">Reste '+money(s.reste)+'</span>'
+      : '<span class="badge solde">Tout payé</span>');
+    return '<div class="list-item'+(s ? ' st-'+s.etat : '')+'" onclick="openFiche(\''+e.id+'\')" style="cursor:pointer">'
       + avatarHtml(e)
       + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
       + '<div class="li-sub">'+esc(cohorteNom(e.cohorteId))+' · '+esc(e.telephone||"")+'</div></div>'
@@ -1015,7 +1129,6 @@ function openEleveForm(id){
     + '<option value="diplome" '+(e&&e.statut==="diplome"?"selected":"")+'>Diplômé</option>'
     + '<option value="abandonne" '+(e&&e.statut==="abandonne"?"selected":"")+'>Abandon</option>'
     + '</select></div></div>'
-    + (role==="directeur" ? '<label>Frais de scolarité totaux (dalasis)</label><input type="number" id="fFrais" value="'+esc(e?e.fraisTotal||"":"")+'" placeholder="Ex : 25000">' : '')
     + '<label>Date d\'inscription</label><input type="date" id="fInscription" value="'+esc(e?e.dateInscription||todayISO():todayISO())+'">'
     + '<label>Remarques</label><textarea id="fRemarques" rows="2">'+esc(e?e.remarques||"":"")+'</textarea>'
     + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
@@ -1054,8 +1167,7 @@ async function saveEleve(id){
 function openFiche(id){
   const e = eleves.find(x => x.id === id);
   if(!e) return;
-  const paye = totalPayeEleve(id);
-  const reste = (Number(e.fraisTotal)||0) - paye;
+  const s = situationEleve(e);
   const mesPaiements = paiements.filter(p => p.eleveId === id);
   const mesNotes = notes.filter(n => n.eleveId === id);
   const parTrim = {};
@@ -1071,17 +1183,25 @@ function openFiche(id){
       + '<div class="li-end"><b>'+moy.toFixed(1)+'/20</b><br><span class="muted">'+appreciation(moy)+'</span></div></div>';
   }).join("") || '<p class="muted">Pas encore de notes.</p>';
 
-  let finHtml = "";
-  finHtml = '<div class="section-title">Frais de scolarité</div>'
-      + '<div class="list-item"><div class="li-main">Total dû</div><div class="li-end money">'+money(e.fraisTotal)+'</div></div>'
-      + '<div class="list-item"><div class="li-main">Payé</div><div class="li-end money pos">'+money(paye)+'</div></div>'
-      + '<div class="list-item"><div class="li-main"><b>Reste</b></div><div class="li-end money '+(reste>0?"neg":"pos")+'">'+money(reste)+'</div></div>'
-      + (mesPaiements.length ? mesPaiements.map(p =>
-          '<div class="list-item"><div class="li-main"><div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+'</div></div>'
-          + '<div class="li-end money pos">'+money(p.montant)+'</div></div>').join("") : "")
-      + '<div style="margin-top:10px"><button class="btn small gold" onclick="closeModal();openPaiementForm(\''+id+'\')">+ Paiement</button> '
-      + (reste > 0 ? '<button class="btn small ghost" onclick="relancer(\''+id+'\')">📲 Relancer</button>' : '')
-      + '</div>';
+  let finHtml = '<div class="section-title">Frais de scolarité</div>'
+    + s.postes.map(x => {
+        const clic = x.etat === "ok" ? '' : ' onclick="closeModal();openPaiementForm(\''+id+'\',\''+x.k+'\')" style="cursor:pointer"';
+        const sub = x.etat === "part" ? 'Avance '+money(x.paye)+' sur '+money(x.montant) : money(x.montant);
+        return '<div class="list-item st-'+x.etat+'"'+clic+'><div class="li-main"><div class="li-title">'+esc(x.label)+'</div>'
+          + '<div class="li-sub">'+sub+'</div></div><div class="li-end">'+badgePoste(x)+'</div></div>';
+      }).join("")
+    + '<div class="list-item"><div class="li-main">Total dû à ce jour</div><div class="li-end money">'+money(s.totalDu)+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Payé</div><div class="li-end money pos">'+money(s.totalPaye)+'</div></div>'
+    + '<div class="list-item"><div class="li-main"><b>Reste</b></div><div class="li-end money '+(s.reste>0?"neg":"pos")+'">'+money(s.reste)+'</div></div>'
+    + (mesPaiements.length
+        ? '<div class="section-title">Versements</div>' + mesPaiements.map(p =>
+            '<div class="list-item"><div class="li-main"><div class="li-title">'+(p.poste ? esc(posteLabel(p.poste)) : 'Versement')+'</div>'
+            + '<div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+'</div></div>'
+            + '<div class="li-end money pos">'+money(p.montant)+'</div></div>').join("")
+        : "")
+    + '<div style="margin-top:10px"><button class="btn small gold" onclick="closeModal();openPaiementForm(\''+id+'\')">+ Paiement</button> '
+    + (s.reste > 0 ? '<button class="btn small ghost" onclick="relancer(\''+id+'\')">📲 Relancer</button>' : '')
+    + '</div>';
 
   openModal(
     '<div class="close-row"><h2>'+esc(e.prenom)+' '+esc(e.nom)+'</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
@@ -1239,7 +1359,7 @@ function renderFinances(){
         const e = eleves.find(x => x.id === p.eleveId);
         return '<div class="list-item"><div class="li-main">'
           + '<div class="li-title">'+(e ? esc(e.prenom)+' '+esc(e.nom) : "Élève supprimé")+'</div>'
-          + '<div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+(p.note?' · '+esc(p.note):'')+'</div></div>'
+          + '<div class="li-sub">'+fmtDate(p.date)+' · '+esc(p.mode||"")+(p.poste?' · '+esc(posteLabel(p.poste)):'')+(p.note?' · '+esc(p.note):'')+'</div></div>'
           + '<div class="li-end"><span class="money pos">'+money(p.montant)+'</span>'
           + (dir ? '<br><button class="linkbtn" onclick="deletePaiement(\''+p.id+'\')">Suppr.</button>' : '')
           + '</div></div>';
@@ -1256,25 +1376,52 @@ function renderFinances(){
         + (dir ? '<br><button class="linkbtn" onclick="deleteDepense(\''+d.id+'\')">Suppr.</button>' : '')
         + '</div></div>').join("")
     : '<div class="empty">Aucune dépense enregistrée.</div>';
-  // Soldes (visibles par le manager-caissier)
-  const actifs = eleves.filter(e => e.statut === "actif" || e.statut === "preinscrit");
-  $("listeSoldes").innerHTML = actifs.length
-    ? actifs.map(e => {
-        const paye = totalPayeEleve(e.id);
-        const total = Number(e.fraisTotal)||0;
-        const reste = total - paye;
-        return '<div class="list-item">'+avatarHtml(e)
-          + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
-          + '<div class="li-sub">'+money(paye)+' / '+money(total)+'</div></div>'
-          + '<div class="li-end">'+(reste>0
-            ? '<span class="money neg">'+money(reste)+'</span><br><span class="muted">reste</span>'
-            : '<span class="badge solde">Soldé</span>')+'</div></div>';
-      }).join("")
-    : '<div class="empty">Aucun élève.</div>';
+  // Soldes (visibles par le manager-caissier) : un poste = une pastille colorée
+  renderSoldes();
   if(dir){
     if(!$("rapportMois").value) $("rapportMois").value = todayISO().slice(0,7);
     renderRapport();
   }
+}
+
+function setSoldesFiltre(f){ soldesFiltre = f; renderSoldes(); }
+function renderSoldes(){
+  const rows = eleves.filter(e => e.statut === "actif" || e.statut === "preinscrit")
+                     .map(e => ({e:e, s:situationEleve(e)}));
+  const nOk = rows.filter(r => r.s.reste === 0).length;
+  const nDoit = rows.length - nOk;
+  let vis = rows;
+  if(soldesFiltre === "doit") vis = rows.filter(r => r.s.reste > 0);
+  if(soldesFiltre === "ok") vis = rows.filter(r => r.s.reste === 0);
+  vis = vis.slice().sort((a,b) => b.s.reste - a.s.reste);
+  let h = '<div class="grid2">'
+    + '<div class="stat ok"><div class="num">'+nOk+'</div><div class="lbl">Tout payé</div></div>'
+    + '<div class="stat alert"><div class="num">'+nDoit+'</div><div class="lbl">Doivent encore</div></div></div>'
+    + '<div class="chips" style="margin:12px 0 6px">'
+    + '<button class="fchip '+(soldesFiltre==="tous"?"sel":"")+'" onclick="setSoldesFiltre(\'tous\')">Tous</button>'
+    + '<button class="fchip '+(soldesFiltre==="doit"?"sel":"")+'" onclick="setSoldesFiltre(\'doit\')">Doivent encore</button>'
+    + '<button class="fchip '+(soldesFiltre==="ok"?"sel":"")+'" onclick="setSoldesFiltre(\'ok\')">Tout payé</button></div>';
+  h += vis.length ? vis.map(r => {
+      const e = r.e, s = r.s;
+      const chips = s.postes.map(x => {
+        let txt = x.court;
+        if(x.etat === "ok") txt += " ✓";
+        else if(x.etat === "part") txt += " · reste " + num(x.reste);
+        else if(x.etat === "no") txt += " ✗";
+        const clic = x.etat === "ok" ? "toast('Déjà payé ✓')" : "openPaiementForm('"+e.id+"','"+x.k+"')";
+        return '<button class="chip '+x.etat+'" onclick="'+clic+'">'+esc(txt)+'</button>';
+      }).join("");
+      return '<div class="solde-card st-'+s.etat+'">'
+        + '<div class="solde-top" onclick="openFiche(\''+e.id+'\')">'+avatarHtml(e)
+        + '<div class="li-main"><div class="li-title">'+esc(e.prenom)+' '+esc(e.nom)+'</div>'
+        + '<div class="li-sub">'+esc(cohorteNom(e.cohorteId))+'</div></div>'
+        + '<div class="li-end">'+(s.reste > 0
+            ? '<span class="money neg">'+money(s.reste)+'</span><br><span class="muted">reste</span>'
+            : '<span class="badge solde">Tout payé</span>')+'</div></div>'
+        + '<div class="chips">'+chips+'</div></div>';
+    }).join("")
+    : '<div class="empty">Aucun élève dans cette liste.</div>';
+  $("listeSoldes").innerHTML = h;
 }
 
 function renderRapport(){
@@ -1303,16 +1450,19 @@ function renderRapport(){
         : "");
 }
 
-function openPaiementForm(preEleveId){
+function openPaiementForm(preEleveId, prePoste){
+  window._prePoste = prePoste || "";
   const opts = eleves.filter(e => e.statut !== "abandonne").map(e => {
-    const reste = (Number(e.fraisTotal)||0) - totalPayeEleve(e.id);
+    const s = situationEleve(e);
     return '<option value="'+e.id+'" '+(e.id===preEleveId?"selected":"")+'>'+esc(e.prenom)+' '+esc(e.nom)
-      + (reste>0 ? ' (reste '+money(reste)+')' : ' (soldé)')+'</option>';
+      + (s.reste>0 ? ' (reste '+money(s.reste)+')' : ' (tout payé)')+'</option>';
   }).join("");
   openModal(
     '<div class="close-row"><h2>Nouveau paiement</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
-    + '<label>Élève</label><select id="pEleve">'+opts+'</select>'
+    + '<label>Élève</label><select id="pEleve" onchange="window._prePoste=\'\';majPostes()">'+opts+'</select>'
+    + '<label>Payer quoi ?</label><select id="pPoste" onchange="majMontantPoste()"></select>'
     + '<label>Montant (dalasis)</label><input type="number" id="pMontant" inputmode="numeric" placeholder="Ex : 5000">'
+    + '<p class="muted" id="pAide" style="margin-top:4px"></p>'
     + '<label>Date du paiement</label><input type="date" id="pDate" value="'+todayISO()+'">'
     + '<label>Mode</label><select id="pMode">'
     + '<option>Espèces</option><option>Wave</option><option>Virement bancaire</option><option>Autre</option></select>'
@@ -1320,11 +1470,39 @@ function openPaiementForm(preEleveId){
     + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button>'
     + '<button class="btn gold" onclick="savePaiement()">Enregistrer</button></div>'
   );
+  majPostes();
+}
+function majPostes(){
+  const e = eleves.find(x => x.id === $("pEleve").value);
+  const sel = $("pPoste");
+  if(!e){ sel.innerHTML = '<option value="">Autre / avance libre</option>'; majMontantPoste(); return; }
+  const s = situationEleve(e);
+  let choix = window._prePoste || "";
+  if(!s.postes.some(x => x.k === choix)) choix = "";
+  if(!choix){
+    const p = s.postes.find(x => x.du && x.etat !== "ok");
+    choix = p ? p.k : "";
+  }
+  sel.innerHTML = s.postes.map(x =>
+      '<option value="'+x.k+'" '+(x.k===choix?"selected":"")+'>'+esc(x.label)
+      + (x.etat === "ok" ? ' — payé ✓' : ' — reste '+money(x.reste))+'</option>').join("")
+    + '<option value="" '+(choix===""?"selected":"")+'>Autre / avance libre</option>';
+  majMontantPoste();
+}
+function majMontantPoste(){
+  const e = eleves.find(x => x.id === $("pEleve").value);
+  const k = $("pPoste").value;
+  if(!e || !k){ $("pMontant").value = ""; $("pAide").textContent = ""; return; }
+  const x = situationEleve(e).postes.find(p => p.k === k);
+  const r = x ? x.reste : 0;
+  $("pMontant").value = r > 0 ? r : "";
+  $("pAide").textContent = r > 0 ? "Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu." : "";
 }
 
 async function savePaiement(){
   const data = {
     eleveId: $("pEleve").value,
+    poste: $("pPoste").value,
     montant: Number($("pMontant").value) || 0,
     date: $("pDate").value,   // TOUJOURS la date choisie par l'utilisateur
     mode: $("pMode").value,
@@ -1335,25 +1513,25 @@ async function savePaiement(){
   if(data.montant <= 0){ toast("Entrez un montant valide."); return; }
   if(!data.date){ toast("Choisissez la date du paiement."); return; }
   try{
-    const dejaPayeAvant = totalPayeEleve(data.eleveId);
-    await db.collection("paiements").add(data);
     const e = eleves.find(x => x.id === data.eleveId);
-    const total = e ? (Number(e.fraisTotal)||0) : 0;
-    const paye = dejaPayeAvant + data.montant;
-    const reste = total - paye;
+    // Situation APRÈS ce versement, calculée avant l'écriture (évite de compter deux fois)
+    const apres = e ? situationEleve(e, [data]) : null;
+    await db.collection("paiements").add(data);
+    const reste = apres ? apres.reste : 0;
+    const dus = apres ? apres.postes.filter(x => x.du && x.reste > 0).map(x => "• " + x.label + " : " + money(x.reste)).join("\n") : "";
     const recu = "🧵 DAFD Académie — Reçu de paiement\n\n"
       + "Élève : " + (e ? (e.prenom||"")+" "+(e.nom||"") : "") + "\n"
+      + "Pour : " + posteLabel(data.poste) + "\n"
       + "Montant reçu : " + money(data.montant) + " (" + data.mode + ")\n"
       + "Date : " + fmtDate(data.date) + "\n"
-      + "Total payé : " + money(paye) + " / " + money(total) + "\n"
-      + (reste > 0 ? "Reste à payer : " + money(reste) : "✅ Scolarité entièrement soldée") + "\n\n"
+      + (reste > 0 ? "Reste à payer : " + money(reste) + "\n" + dus : "✅ Tous les frais à ce jour sont réglés") + "\n\n"
       + "Merci de votre confiance !\nDjamil Academy of Fashion Design — Bakau New Town";
     window._recuTel = e ? (e.telephone || "") : "";
     window._recuTexte = recu;
     openModal(
       '<div class="close-row"><h2>Paiement enregistré ✓</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
-      + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b>.'
-      + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Scolarité soldée 🎉') + '</p>'
+      + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b> pour ' + esc(posteLabel(data.poste)) + '.'
+      + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Tout est payé 🎉') + '</p>'
       + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(window._recuTel, window._recuTexte);closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
       + '<div style="margin-top:10px"><button class="btn ghost" style="width:100%" onclick="closeModal()">Fermer sans envoyer</button></div>'
     );
@@ -1477,6 +1655,16 @@ $("btnSaveAdminCode").addEventListener("click", async () => {
     $("newAdminCode").value = "";
     toast("Code de sécurité changé ✓");
   }catch(err){ toast("Erreur d'enregistrement."); }
+});
+
+$("btnSaveTarifs").addEventListener("click", async () => {
+  if(role !== "directeur"){ toast("🔒 Réservé au directeur."); return; }
+  const v = id => Math.max(0, Number($(id).value) || 0);
+  const t = {inscription:v("tInscription"), uniforme:v("tUniforme"), machine:v("tMachine"), trimestre:v("tTrimestre")};
+  try{
+    await db.collection("config").doc("tarifs").set(t);
+    toast("Tarifs enregistrés ✓");
+  }catch(err){ toast("Erreur d'enregistrement des tarifs."); }
 });
 
 $("btnSaveMatieres").addEventListener("click", async () => {
