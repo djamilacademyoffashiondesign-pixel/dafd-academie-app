@@ -278,6 +278,34 @@ td.num,th.num{text-align:right}
 }
 .pill-tabs button.active{background:var(--indigo);color:var(--gold);border-color:var(--indigo)}
 
+/* ---------- Note du jour / progression ---------- */
+.sj-card{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;background:var(--paper)}
+.sj-card.abs{opacity:.55}
+.sj-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sj-name{font-weight:700;flex:1 1 60%}
+.sj-total{font-family:'Marcellus',serif;font-size:18px;color:var(--indigo);min-width:54px;text-align:right}
+.sj-mini{font-size:12.5px;font-weight:700;padding:6px 10px;border-radius:16px;border:1px solid var(--line);color:var(--ink-soft);background:var(--paper)}
+.sj-mini.on{background:var(--danger);color:#fff;border-color:var(--danger)}
+.sj-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px dashed var(--line)}
+.sj-row:first-of-type{margin-top:8px}
+.sj-row span{font-size:14px}
+.seg{display:flex;gap:6px;flex-shrink:0}
+.seg button{width:40px;height:36px;border-radius:9px;border:1.5px solid var(--line);font-weight:700;color:var(--ink-soft);background:var(--paper)}
+.seg button.on[data-v="0"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.seg button.on[data-v="1"]{background:var(--warn);border-color:var(--warn);color:#fff}
+.seg button.on[data-v="2"]{background:var(--success);border-color:var(--success);color:#fff}
+.sj-opt{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:14.5px}
+.sj-opt input{width:22px;height:22px}
+.pg{display:inline-block;min-width:34px;padding:3px 6px;border-radius:7px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.pg.hi{background:#E4EFE7;color:var(--success)}
+.pg.mid{background:#F8ECD3;color:var(--warn)}
+.pg.lo{background:#F5E3DF;color:var(--danger)}
+.bars{display:flex;align-items:flex-end;gap:5px;height:84px;margin:6px 0 2px;padding-bottom:18px;position:relative}
+.bar{flex:1;max-width:26px;border-radius:5px 5px 0 0;position:relative;min-height:3px}
+.bar i{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font-style:normal;font-size:10px;color:var(--ink-soft)}
+.bar.hi{background:var(--success)}.bar.mid{background:var(--warn)}.bar.lo{background:var(--danger)}
+.cc-hint{font-size:12.5px;color:var(--ink-soft)}
+
 /* ---------- Print (bulletins) ---------- */
 #printArea{display:none}
 @media print{
@@ -365,6 +393,41 @@ td.num,th.num{text-align:right}
 
     <!-- ===== Notes ===== -->
     <section id="viewNotes" class="hidden">
+      <div class="pill-tabs" id="notesTabs">
+        <button data-notestab="jour" class="active">Note du jour</button>
+        <button data-notestab="prog">Progression</button>
+        <button data-notestab="trim">Notes du trimestre</button>
+      </div>
+      <div id="notesJour">
+        <div class="card">
+          <h2>Note du jour</h2>
+          <p class="muted">Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.</p>
+          <div class="grid2">
+            <div><label>Cohorte</label><select id="sjCohorte"></select></div>
+            <div><label>Date</label><input type="date" id="sjDate"></div>
+          </div>
+          <div class="sj-opt"><input type="checkbox" id="sjPiece"><span>Pièce complète aujourd'hui (compte double)</span></div>
+          <div id="sjListe"></div>
+          <div style="margin-top:14px" id="sjSaveRow" class="hidden">
+            <button class="btn" id="btnSaveSuivi">Enregistrer les notes du jour</button>
+          </div>
+        </div>
+      </div>
+      <div id="notesProg" class="hidden">
+        <div class="card">
+          <h2>Progression par semaine</h2>
+          <div class="grid2">
+            <div><label>Cohorte</label><select id="spCohorte"></select></div>
+            <div><label>Trimestre</label><select id="spTrimestre">
+              <option value="1">Trimestre 1</option><option value="2">Trimestre 2</option>
+              <option value="3">Trimestre 3</option><option value="4">Trimestre 4</option>
+              <option value="5">Trimestre 5</option><option value="6">Trimestre 6</option>
+            </select></div>
+          </div>
+          <div id="spZone"></div>
+        </div>
+      </div>
+      <div id="notesTrim" class="hidden">
       <div class="card">
         <h2>Saisie des notes</h2>
         <div class="grid2">
@@ -402,6 +465,7 @@ td.num,th.num{text-align:right}
           <button class="btn ghost" id="btnVoirBulletin">Voir le bulletin</button>
         </div>
         <div id="bulletinZone"></div>
+      </div>
       </div>
     </section>
 
@@ -544,6 +608,8 @@ let directeurs = [];
 let unsubs = [];
 let currentView = "Dash";
 let finTab = "paiements";
+let suivi = [];
+let notesTab = "jour";
 
 const MATIERES_DEFAUT = [
   "Patronage / Coupe à plat",
@@ -620,6 +686,7 @@ const DICO_EN = {
   "Tout payé":"All paid","Doivent encore":"Still owe","Tous":"All","Non payé":"Unpaid","Payé ✓":"Paid ✓","À venir":"Upcoming","Avance":"Advance","Versement":"Payment","Versements":"Payments",
   "Inscription":"Registration","Uniforme":"Uniform","Réparation machine":"Machine repair","Payer quoi ?":"Payment for","Autre / avance libre":"Other / free advance",
   "Total dû à ce jour":"Total due to date","Tarifs de scolarité":"Tuition rates","Enregistrer les tarifs":"Save rates","Chaque trimestre":"Each term",
+  "Note du jour":"Daily mark","Progression":"Progress","Notes du trimestre":"Term grades","Tout à 2":"All 2","Absent":"Absent","Enregistrer les notes du jour":"Save daily marks","Notes du jour enregistrées ✓":"Daily marks saved ✓","Progression par semaine":"Weekly progress","Date":"Date","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Présence":"Attendance","À voir en entretien":"Needs a follow-up talk","Progression (note du jour)":"Progress (daily marks)","Contrôle continu /20":"Coursework /20","Examen /20":"Exam /20","Finale /20":"Final /20",
   "Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).":"These amounts are used to work out, for each student, what is paid and what is still due (in dalasis)."
 };
 let _translating = false;
@@ -924,6 +991,10 @@ function startData(){
     }
     renderAll();
   }, err => {}));
+  unsubs.push(db.collection("suivi").onSnapshot(s => {
+    suivi = s.docs.map(d => ({id:d.id, ...d.data()}));
+    renderAll();
+  }, err => { console.warn("suivi", err); }));
   unsubs.push(db.collection("depenses").onSnapshot(s => {
     depenses = s.docs.map(d => ({id:d.id, ...d.data()}));
     depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
@@ -955,10 +1026,10 @@ function showView(v){
   renderAll();
 }
 
-document.querySelectorAll(".pill-tabs button").forEach(b => {
+document.querySelectorAll(".pill-tabs button[data-fintab]").forEach(b => {
   b.addEventListener("click", () => {
     finTab = b.dataset.fintab;
-    document.querySelectorAll(".pill-tabs button").forEach(x => x.classList.toggle("active", x === b));
+    document.querySelectorAll(".pill-tabs button[data-fintab]").forEach(x => x.classList.toggle("active", x === b));
     ["Paiements","Depenses","Soldes","Rapport"].forEach(x => {
       $("fin"+x).classList.toggle("hidden", x.toLowerCase() !== finTab);
     });
@@ -970,7 +1041,7 @@ function renderAll(){
   renderCohorteSelects();
   if(currentView === "Dash") renderDash();
   if(currentView === "Eleves") renderEleves();
-  if(currentView === "Notes"){ renderNotesGrid(); renderBullSelect(); }
+  if(currentView === "Notes"){ renderNotesGrid(); renderBullSelect(); renderSuiviJour(); renderProgression(); }
   if(currentView === "Finances") renderFinances();
   if(currentView === "Plus") renderCohortesList();
 }
@@ -985,6 +1056,12 @@ function renderCohorteSelects(){
   const prevN = n.value;
   n.innerHTML = opts || '<option value="">Créez d\'abord une cohorte</option>';
   if(prevN) n.value = prevN;
+  ["sjCohorte","spCohorte"].forEach(idSel => {
+    const el = $(idSel); if(!el) return;
+    const pv = el.value;
+    el.innerHTML = opts || '<option value="">Créez d\'abord une cohorte</option>';
+    if(pv) el.value = pv;
+  });
 }
 function renderMatieresSelect(){
   const m = $("notesMatiere");
@@ -1213,6 +1290,7 @@ function openFiche(id){
     + '<div class="list-item"><div class="li-main">Adresse</div><div class="li-end">'+esc(e.adresse||"—")+'</div></div>'
     + '<div class="list-item"><div class="li-main">Inscrit le</div><div class="li-end">'+fmtDate(e.dateInscription)+'</div></div>'
     + (e.remarques ? '<p class="muted" style="margin-top:8px">'+esc(e.remarques)+'</p>' : '')
+    + '<div class="section-title">Progression (note du jour)</div>' + progressionFicheHtml(id)
     + '<div class="section-title">Résultats</div>' + notesHtml
     + finHtml
     + '<div class="actions">'
@@ -1261,6 +1339,23 @@ function renderNotesGrid(){
     $("notesSaveRow").classList.add("hidden");
     return;
   }
+  const rub = rubriqueDe(mat);
+  if(rub){
+    const rowsCC = list.map(e => {
+      const existante = notes.find(n => n.eleveId === e.id && String(n.trimestre) === String(trim) && n.matiere === mat);
+      const cc = ccEleve(e.id, Number(trim))[rub];
+      const exam = existante && existante.examen != null ? existante.examen : "";
+      const fin = existante ? Number(existante.note).toFixed(1) : "—";
+      return '<tr><td>'+esc(e.prenom)+' '+esc(e.nom)+'</td>'
+        + '<td class="num">'+(cc == null ? '—' : cc.toFixed(1))+'</td>'
+        + '<td class="num"><input class="note-input" type="number" min="0" max="20" step="0.5" data-eleve="'+e.id+'" data-cc="'+(cc == null ? '' : cc)+'" value="'+esc(exam)+'" inputmode="decimal" oninput="majFinale(this)"></td>'
+        + '<td class="num"><b class="finale">'+fin+'</b></td></tr>';
+    }).join("");
+    zone.innerHTML = '<p class="cc-hint" style="margin-top:10px">Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d\'examen compte seule.</p>'
+      + '<table><thead><tr><th>Élève</th><th class="num">Contrôle continu /20</th><th class="num">Examen /20</th><th class="num">Finale /20</th></tr></thead><tbody>'+rowsCC+'</tbody></table>';
+    $("notesSaveRow").classList.remove("hidden");
+    return;
+  }
   const rows = list.map(e => {
     const existante = notes.find(n => n.eleveId === e.id && String(n.trimestre) === String(trim) && n.matiere === mat);
     const val = existante ? existante.note : "";
@@ -1289,6 +1384,12 @@ $("btnSaveNotes").addEventListener("click", async () => {
     const eid = inp.dataset.eleve;
     const existante = notes.find(n => n.eleveId === eid && Number(n.trimestre) === trim && n.matiere === mat);
     const data = { eleveId: eid, cohorteId: cid, trimestre: trim, matiere: mat, note: note, date: todayISO() };
+    if(inp.dataset.cc !== undefined){
+      const cc = inp.dataset.cc === "" ? null : Number(inp.dataset.cc);
+      data.examen = note;
+      data.cc = cc;
+      data.note = cc == null ? note : Math.round((0.4*cc + 0.6*note)*10)/10;
+    }
     if(existante){ batch.update(db.collection("notes").doc(existante.id), data); }
     else{ batch.set(db.collection("notes").doc(), data); }
     count++;
@@ -1299,6 +1400,232 @@ $("btnSaveNotes").addEventListener("click", async () => {
     toast(count + " note" + (count>1?"s":"") + " enregistrée" + (count>1?"s":"") + " ✓");
   }catch(err){ toast("Erreur d'enregistrement des notes."); }
 });
+
+
+/* ================= NOTE DU JOUR ET PROGRESSION =================
+   Collection « suivi » : un document par élève et par jour (id = eleveId_date).
+   c = [mesures/tracé, coupe, coutures, finitions, tenue au poste], chaque valeur 0, 1, 2 ou null.
+   piece = pièce complète (compte double). absent = absence (compte pour l'assiduité). */
+const CRITERES = ["Mesures et tracé","Coupe et placement","Coutures et montage","Finitions et repassage","Tenue au poste"];
+let sjState = {};
+let sjKey = "";
+
+document.querySelectorAll("#notesTabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    notesTab = b.dataset.notestab;
+    document.querySelectorAll("#notesTabs button").forEach(x => x.classList.toggle("active", x === b));
+    $("notesJour").classList.toggle("hidden", notesTab !== "jour");
+    $("notesProg").classList.toggle("hidden", notesTab !== "prog");
+    $("notesTrim").classList.toggle("hidden", notesTab !== "trim");
+    renderSuiviJour(); renderProgression();
+  });
+});
+$("sjDate").value = todayISO();
+$("sjCohorte").addEventListener("change", () => { sjKey = ""; renderSuiviJour(); });
+$("sjDate").addEventListener("change", () => { sjKey = ""; renderSuiviJour(); });
+$("spCohorte").addEventListener("change", () => { spAutoTrim = true; renderProgression(); });
+$("spTrimestre").addEventListener("change", () => { spAutoTrim = false; renderProgression(); });
+
+function totalJour(c){
+  const v = (c || []).filter(x => x === 0 || x === 1 || x === 2);
+  if(!v.length) return null;
+  return v.reduce((a,b) => a+b, 0) / (2*v.length) * 10;
+}
+function lundiDe(iso){
+  const p = iso.split("-").map(Number);
+  const d = new Date(p[0], p[1]-1, p[2]);
+  const wd = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - wd);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function classeNote(n){ return n >= 7 ? "hi" : (n >= 5 ? "mid" : "lo"); }
+function elevesCohorte(cid){ return eleves.filter(e => e.cohorteId === cid && e.statut === "actif"); }
+
+function renderSuiviJour(){
+  if(currentView !== "Notes" || notesTab !== "jour") return;
+  const cid = $("sjCohorte").value, date = $("sjDate").value;
+  const zone = $("sjListe");
+  if(!cid || !date){ zone.innerHTML = '<p class="muted" style="margin-top:12px">Choisissez une cohorte et une date.</p>'; $("sjSaveRow").classList.add("hidden"); return; }
+  const list = elevesCohorte(cid);
+  const key = cid + "|" + date + "|" + list.map(e => e.id).join(",");
+  if(key === sjKey) return; // ne pas effacer une saisie en cours
+  sjKey = key;
+  sjState = {};
+  let piece = false;
+  list.forEach(e => {
+    const d = suivi.find(x => x.id === e.id + "_" + date);
+    sjState[e.id] = { c: d && Array.isArray(d.c) ? d.c.slice(0,5) : [null,null,null,null,null], absent: !!(d && d.absent) };
+    while(sjState[e.id].c.length < 5) sjState[e.id].c.push(null);
+    if(d && d.piece) piece = true;
+  });
+  $("sjPiece").checked = piece;
+  if(!list.length){ zone.innerHTML = '<p class="muted" style="margin-top:12px">Aucun élève actif dans cette cohorte.</p>'; $("sjSaveRow").classList.add("hidden"); return; }
+  zone.innerHTML = list.map(e => {
+    const st = sjState[e.id];
+    return '<div class="sj-card'+(st.absent?' abs':'')+'" id="sj_'+e.id+'">'
+      + '<div class="sj-head"><span class="sj-name">'+esc(e.prenom)+' '+esc(e.nom)+'</span><span class="sj-total"></span>'
+      + '<button class="sj-mini" onclick="sjTout(\''+e.id+'\')">Tout à 2</button>'
+      + '<button class="sj-mini'+(st.absent?' on':'')+'" onclick="sjAbsent(\''+e.id+'\')">Absent</button></div>'
+      + CRITERES.map((lab,k) => '<div class="sj-row"><span>'+(k+1)+'. '+lab+'</span><div class="seg">'
+          + [0,1,2].map(v => '<button data-v="'+v+'" onclick="sjSet(\''+e.id+'\','+k+','+v+')">'+v+'</button>').join("")
+          + '</div></div>').join("")
+      + '</div>';
+  }).join("");
+  list.forEach(e => sjMaj(e.id));
+  $("sjSaveRow").classList.remove("hidden");
+}
+function sjMaj(eid){
+  const card = $("sj_"+eid); if(!card) return;
+  const st = sjState[eid];
+  card.classList.toggle("abs", st.absent);
+  card.querySelectorAll(".sj-head .sj-mini")[1].classList.toggle("on", st.absent);
+  card.querySelectorAll(".seg").forEach((seg,k) => {
+    seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", !st.absent && st.c[k] === Number(b.dataset.v)));
+  });
+  const t = totalJour(st.c);
+  card.querySelector(".sj-total").textContent = st.absent ? "Absent" : (t == null ? "–/10" : (Math.round(t*10)/10) + "/10");
+}
+function sjSet(eid,k,v){ const st = sjState[eid]; st.absent = false; st.c[k] = st.c[k] === v ? null : v; sjMaj(eid); }
+function sjTout(eid){ const st = sjState[eid]; st.absent = false; st.c = [2,2,2,2,2]; sjMaj(eid); }
+function sjAbsent(eid){ const st = sjState[eid]; st.absent = !st.absent; sjMaj(eid); }
+
+$("btnSaveSuivi").addEventListener("click", async () => {
+  const cid = $("sjCohorte").value, date = $("sjDate").value;
+  const c = cohortes.find(x => x.id === cid);
+  const trim = c ? (Number(c.trimestreActuel) || 1) : 1;
+  const piece = $("sjPiece").checked;
+  const batch = db.batch();
+  let n = 0;
+  Object.keys(sjState).forEach(eid => {
+    const st = sjState[eid];
+    const ref = db.collection("suivi").doc(eid + "_" + date);
+    const existe = suivi.some(x => x.id === eid + "_" + date);
+    const vide = !st.absent && st.c.every(x => x === null);
+    if(vide){ if(existe){ batch.delete(ref); n++; } return; }
+    const t = totalJour(st.c);
+    batch.set(ref, { eleveId: eid, cohorteId: cid, date: date, trimestre: trim, c: st.absent ? [null,null,null,null,null] : st.c,
+      total: st.absent || t == null ? null : Math.round(t*10)/10, piece: piece, absent: st.absent,
+      auteur: currentUser ? currentUser.email : "" });
+    n++;
+  });
+  if(!n){ toast("Aucune note à enregistrer."); return; }
+  try{
+    await batch.commit();
+    sjKey = "";
+    toast("Notes du jour enregistrées ✓");
+  }catch(err){
+    toast(err && err.code === "permission-denied" ? "Accès refusé par Firebase : autorisez la collection « suivi » dans les règles." : "Erreur d'enregistrement.");
+  }
+});
+
+/* Moyennes pondérées (pièce complète = ×2) */
+function suiviEleve(eid, trim){
+  return suivi.filter(x => x.eleveId === eid && (trim == null || Number(x.trimestre) === Number(trim)));
+}
+function moyCritere(docs, k){
+  let s = 0, w = 0;
+  docs.forEach(d => { if(d.absent) return; const v = (d.c||[])[k]; if(v === 0 || v === 1 || v === 2){ const p = d.piece ? 2 : 1; s += v*p; w += p; } });
+  return w ? s / w : null;
+}
+function moyPaire(docs, a, b){
+  const x = moyCritere(docs, a), y = moyCritere(docs, b);
+  if(x == null && y == null) return null;
+  if(x == null) return y; if(y == null) return x;
+  return (x + y) / 2;
+}
+/* Contrôle continu sur 20 par rubrique du bulletin */
+function ccEleve(eid, trim){
+  const docs = suiviEleve(eid, trim);
+  const pat = moyPaire(docs, 0, 1), cou = moyPaire(docs, 2, 3), ten = moyCritere(docs, 4);
+  const presence = docs.length ? docs.filter(d => !d.absent).length / docs.length : null;
+  let ate = null;
+  if(ten != null && presence != null) ate = 0.6 * ten * 10 + 0.4 * presence * 20;
+  return { pat: pat == null ? null : pat * 10, cou: cou == null ? null : cou * 10, ate: ate, presence: presence, jours: docs.length };
+}
+function rubriqueDe(mat){
+  const m = String(mat || "").toLowerCase();
+  if(/pratique d.atelier|workshop/.test(m)) return "ate";
+  if(/patron|coupe/.test(m)) return "pat";
+  if(/couture|montage|sewing/.test(m)) return "cou";
+  return null;
+}
+function majFinale(inp){
+  const b = inp.closest("tr").querySelector(".finale");
+  const v = inp.value.trim();
+  if(v === ""){ b.textContent = "—"; return; }
+  const ex = Math.min(20, Math.max(0, Number(v)||0));
+  const cc = inp.dataset.cc === "" ? null : Number(inp.dataset.cc);
+  b.textContent = (cc == null ? ex : 0.4*cc + 0.6*ex).toFixed(1);
+}
+/* Moyenne par semaine sur 10 */
+function semainesEleve(eid, trim){
+  const par = {};
+  suiviEleve(eid, trim).forEach(d => {
+    if(d.absent) return;
+    const t = totalJour(d.c); if(t == null) return;
+    const w = lundiDe(d.date), p = d.piece ? 2 : 1;
+    if(!par[w]) par[w] = {s:0, n:0};
+    par[w].s += t*p; par[w].n += p;
+  });
+  const out = {};
+  Object.keys(par).forEach(w => out[w] = par[w].s / par[w].n);
+  return out;
+}
+
+let spAutoTrim = true;
+function renderProgression(){
+  if(currentView !== "Notes" || notesTab !== "prog") return;
+  const cid = $("spCohorte").value;
+  const zone = $("spZone");
+  if(!cid){ zone.innerHTML = '<p class="muted" style="margin-top:12px">Choisissez une cohorte.</p>'; return; }
+  const c = cohortes.find(x => x.id === cid);
+  if(spAutoTrim && c) $("spTrimestre").value = String(Number(c.trimestreActuel) || 1);
+  const trim = Number($("spTrimestre").value);
+  const list = elevesCohorte(cid);
+  const weeksSet = new Set();
+  const data = list.map(e => { const w = semainesEleve(e.id, trim); Object.keys(w).forEach(k => weeksSet.add(k)); return {e:e, w:w}; });
+  const weeks = Array.from(weeksSet).sort();
+  if(!weeks.length){ zone.innerHTML = '<p class="muted" style="margin-top:12px">Pas encore de notes du jour pour ce trimestre.</p>'; return; }
+  const alertes = [];
+  const rows = data.map(({e,w}) => {
+    const vals = weeks.map(k => w[k]);
+    const ok = vals.filter(v => v != null);
+    const moy = ok.length ? ok.reduce((a,b)=>a+b,0)/ok.length : null;
+    for(let i = 1; i < vals.length; i++){ if(vals[i] != null && vals[i-1] != null && vals[i] < 5 && vals[i-1] < 5){ alertes.push(e); break; } }
+    return '<tr><td style="white-space:nowrap">'+esc(e.prenom)+' '+esc(e.nom)+'</td>'
+      + vals.map(v => '<td class="num">'+(v == null ? '·' : '<span class="pg '+classeNote(v)+'">'+v.toFixed(1)+'</span>')+'</td>').join("")
+      + '<td class="num"><b>'+(moy == null ? '—' : moy.toFixed(1))+'</b></td></tr>';
+  }).join("");
+  const head = weeks.map((k,i) => '<th class="num" title="Semaine du '+fmtDate(k)+'">S'+(i+1)+'<br><span style="font-weight:400;text-transform:none">'+fmtDate(k).slice(0,5)+'</span></th>').join("");
+  const ccRows = list.map(e => {
+    const cc = ccEleve(e.id, trim);
+    const f = v => v == null ? '—' : v.toFixed(1);
+    return '<tr><td style="white-space:nowrap">'+esc(e.prenom)+' '+esc(e.nom)+'</td><td class="num">'+f(cc.pat)+'</td><td class="num">'+f(cc.cou)+'</td><td class="num">'+f(cc.ate)+'</td><td class="num">'+(cc.presence == null ? '—' : Math.round(cc.presence*100)+' %')+'</td></tr>';
+  }).join("");
+  zone.innerHTML =
+    (alertes.length ? '<div class="list-item st-no" style="margin-top:12px"><div class="li-main"><div class="li-title">À voir en entretien</div><div class="li-sub">Sous 5/10 deux semaines de suite : '+alertes.map(e => esc(e.prenom)+' '+esc(e.nom)).join(", ")+'</div></div></div>' : '')
+    + '<div class="section-title">Moyenne de chaque semaine, sur 10</div>'
+    + '<div class="tablewrap"><table><thead><tr><th>Élève</th>'+head+'<th class="num">Moy.</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    + '<div class="section-title">Contrôle continu du trimestre, sur 20</div>'
+    + '<p class="cc-hint">Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d\'atelier (onglet « Notes du trimestre »).</p>'
+    + '<div class="tablewrap"><table><thead><tr><th>Élève</th><th class="num">Patronage</th><th class="num">Couture</th><th class="num">Atelier</th><th class="num">Présence</th></tr></thead><tbody>'+ccRows+'</tbody></table></div>';
+}
+function progressionFicheHtml(eid){
+  const e = eleves.find(x => x.id === eid);
+  const c = e ? cohortes.find(x => x.id === e.cohorteId) : null;
+  const trim = c ? (Number(c.trimestreActuel) || 1) : 1;
+  const w = semainesEleve(eid, trim);
+  const keys = Object.keys(w).sort().slice(-12);
+  if(!keys.length) return '<p class="muted">Pas encore de notes du jour ce trimestre.</p>';
+  const cc = ccEleve(eid, trim);
+  const f = v => v == null ? '—' : v.toFixed(1)+'/20';
+  return '<p class="muted">Trimestre '+trim+' · moyenne de chaque semaine sur 10</p>'
+    + '<div class="bars">'+keys.map((k,i) => '<div class="bar '+classeNote(w[k])+'" style="height:'+Math.max(4, w[k]*6.6)+'px" title="Semaine du '+fmtDate(k)+' : '+w[k].toFixed(1)+'/10"><i>'+fmtDate(k).slice(0,5)+'</i></div>').join("")+'</div>'
+    + '<div class="list-item"><div class="li-main">Contrôle continu patronage</div><div class="li-end">'+f(cc.pat)+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Contrôle continu couture</div><div class="li-end">'+f(cc.cou)+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Pratique d\'atelier</div><div class="li-end">'+f(cc.ate)+'</div></div>'
+    + '<div class="list-item"><div class="li-main">Présence</div><div class="li-end">'+(cc.presence == null ? '—' : Math.round(cc.presence*100)+' %')+'</div></div>';
+}
 
 /* ---------- Bulletin ---------- */
 function renderBullSelect(){
