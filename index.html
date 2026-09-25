@@ -94,7 +94,13 @@ header.appbar{
   font-size:12px;background:rgba(255,255,255,.12);padding:6px 11px;border-radius:20px;
   color:#fff;display:flex;align-items:center;gap:6px;
 }
-.userchip .role{color:var(--gold);font-weight:700}
+.userchip .role{color:var(--gold);font-weight:700;white-space:nowrap}
+.appbar-row{gap:8px}
+.appbar-row > div:first-child{min-width:0;flex-shrink:0}
+.appbar h1{white-space:nowrap}
+.userchip{min-width:0;overflow:hidden;flex-shrink:1}
+#chipName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media (max-width:480px){ #chipName{display:none} }
 main{max-width:960px;margin:0 auto;padding:16px}
 
 /* ---------- Bottom nav ---------- */
@@ -666,6 +672,7 @@ function statutLabel(s){
    textes connus. Le choix est mémorisé sur l'appareil. */
 let LANG = localStorage.getItem("dafd_lang") || "fr";
 const DICO_EN = {
+  "DAFD Académie":"DAFD Academy","Directeur":"Director","Manager":"Manager","+ Enregistrer un paiement":"+ Record a payment","+ Enregistrer une dépense":"+ Record an expense","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Autres":"Other","Loyer":"Rent","Salaires":"Salaries","Transport":"Transport","Électricité & eau":"Electricity & water","Internet & téléphone":"Internet & phone","Matériel & tissus":"Materials & fabrics","Modifier la cohorte":"Edit cohort","Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu.":"Suggested amount = what is left. For an advance, enter the amount received.","📷 Ajouter la photo":"📷 Add photo","Moy.":"Avg.","Email":"Email","Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d'atelier (onglet « Notes du trimestre »).":"These marks count for 40% in the pattern drafting, sewing and workshop practice subjects (“Term grades” tab).","Contrôle continu couture":"Coursework, sewing","Contrôle continu patronage":"Coursework, pattern drafting","Contrôle continu du trimestre, sur 20":"Term coursework, out of 20","Moyenne de chaque semaine, sur 10":"Weekly average, out of 10","Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d'examen compte seule.":"Final mark = 40% coursework (daily marks) + 60% exam. Without daily marks, the exam mark counts alone.","Pièce complète aujourd'hui (compte double)":"Complete garment today (counts double)","Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.":"For each student, 0, 1 or 2 marks per criterion. Total out of 10. Tap a value again to clear it.","Pratique d'atelier":"Workshop practice","Cohorte":"Cohort","Contrôle continu /20":"Coursework /20","Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.":"The emails listed here can see the finances. Other accounts (manager, teachers) only see students and grades. One email per line.","Patronage / Coupe à plat":"Pattern drafting / Flat cutting","Couture & Montage":"Sewing & Construction","Dessin de mode / Stylisme":"Fashion drawing / Design","Technologie des textiles":"Textile technology","Moulage / Drapé":"Draping","Tenues traditionnelles africaines":"Traditional African garments","Histoire de la mode":"Fashion history","Gestion d'atelier":"Workshop management","Choisissez une cohorte et une date.":"Choose a cohort and a date.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Choisissez une cohorte.":"Choose a cohort.","Pas encore de notes du jour pour ce trimestre.":"No daily marks for this term yet.","Pas encore de notes du jour ce trimestre.":"No daily marks this term yet.","À voir en entretien":"Needs a follow-up talk","Présence":"Attendance","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Accès enregistrés ✓ (effet à la prochaine connexion)":"Access saved ✓ (applies at next sign-in)","Accès refusé par Firebase : autorisez la collection « suivi » dans les règles.":"Access denied by Firebase: allow the “suivi” collection in the rules.","Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?":"Warning: your own email is not in the list. You will lose access to the finances. Continue?","Aucune note à enregistrer.":"No marks to save.","Choisissez la date du paiement.":"Choose the payment date.","Choisissez un élève.":"Choose a student.","Choisissez une image.":"Choose an image.","Code actuel incorrect.":"Current code incorrect.","Code de sécurité changé ✓":"Security code changed ✓","Code incorrect. Suppression annulée.":"Wrong code. Deletion cancelled.","Cohorte enregistrée ✓":"Cohort saved ✓","Cohorte supprimée":"Cohort deleted","Connexion…":"Signing in…","Créez d'abord une cohorte (onglet Plus).":"Create a cohort first (More tab).","Dépense supprimée":"Expense deleted","Entrez au moins un nom.":"Enter at least one name.","Entrez au moins une matière.":"Enter at least one subject.","Entrez un libellé.":"Enter a description.","Entrez un montant valide.":"Enter a valid amount.","Entrez un nom de cohorte.":"Enter a cohort name.","Entrez votre email et votre mot de passe.":"Enter your email and password.","Erreur d'enregistrement des notes.":"Error saving grades.","Erreur d'enregistrement des tarifs.":"Error saving rates.","Erreur d'enregistrement du paiement.":"Error saving the payment.","Erreur d'enregistrement.":"Error while saving.","Erreur d'enregistrement. Réessayez.":"Error while saving. Try again.","Erreur de lecture du fichier.":"Error reading the file.","Erreur lors de la suppression.":"Error while deleting.","Il faut au moins un email directeur.":"At least one director email is required.","Impossible de lire cette image.":"Cannot read this image.","Le nouveau code doit avoir au moins 4 caractères.":"The new code must have at least 4 characters.","Matières enregistrées ✓":"Subjects saved ✓","Paiement supprimé":"Payment deleted","Pas de numéro WhatsApp pour cet élève.":"No WhatsApp number for this student.","Photo ajoutée ✓":"Photo added ✓","Seul le directeur peut supprimer un paiement.":"Only the director can delete a payment.","Seul le directeur peut supprimer une dépense.":"Only the director can delete an expense.","Supprimer ce paiement ?":"Delete this payment?","Supprimer cette cohorte ?":"Delete this cohort?","Supprimer cette dépense ?":"Delete this expense?","Tarifs enregistrés ✓":"Rates saved ✓","Tout est déjà payé ✓":"Everything is already paid ✓","Élève enregistré ✓":"Student saved ✓","Élève supprimé":"Student deleted","🔐 Code de sécurité administrateur :":"🔐 Administrator security code:","🔐 Entrez d'abord le code actuel :":"🔐 First enter the current code:","🔒 Réservé au directeur.":"🔒 Director only.","🔒 Seul le directeur peut modifier une fiche élève.":"🔒 Only the director can edit a student record.","🔒 Seul le directeur peut supprimer un élève.":"🔒 Only the director can delete a student.","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt","Fermer sans envoyer":"Close without sending","Ajouter":"Add","Connexion impossible. Vérifiez email et mot de passe.":"Cannot sign in. Check your email and password.","Problème réseau. Vérifiez votre connexion et réessayez.":"Network problem. Check your connection and try again.","Trop d'essais. Attendez quelques minutes puis réessayez.":"Too many attempts. Wait a few minutes and try again.","votre@email.com":"your@email.com",
   "Gestion scolaire":"School management","Tableau":"Dashboard","Élèves":"Students","Notes":"Grades","Finances":"Finances","Plus":"More",
   "Cohortes en cours":"Current cohorts","Finances du mois":"This month's finances","Frais en retard":"Overdue fees","Élèves actifs":"Active students","Préinscrits 2026-27":"Pre-enrolled 2026-27","Abandons":"Dropouts","Diplômés":"Graduates","Actifs":"Active",
   "Encaissements":"Income","Dépenses":"Expenses","Solde du mois":"Month balance","Tous les frais sont à jour 🎉":"All fees are up to date 🎉","Élèves en retard":"Students overdue",
@@ -689,6 +696,56 @@ const DICO_EN = {
   "Note du jour":"Daily mark","Progression":"Progress","Notes du trimestre":"Term grades","Tout à 2":"All 2","Absent":"Absent","Enregistrer les notes du jour":"Save daily marks","Notes du jour enregistrées ✓":"Daily marks saved ✓","Progression par semaine":"Weekly progress","Date":"Date","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Présence":"Attendance","À voir en entretien":"Needs a follow-up talk","Progression (note du jour)":"Progress (daily marks)","Contrôle continu /20":"Coursework /20","Examen /20":"Exam /20","Finale /20":"Final /20",
   "Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).":"These amounts are used to work out, for each student, what is paid and what is still due (in dalasis)."
 };
+/* Textes qui contiennent des nombres, des noms ou des montants :
+   traduits par motifs (le dictionaire ne couvre que les textes fixes). */
+function trMot(t){ t = String(t).trim(); return DICO_EN[t] !== undefined ? DICO_EN[t] : t; }
+const RX_EN = [
+  [/^Reste D (.+)$/, (m,a)=>"Balance D "+a],
+  [/^Reste : (.+)$/, (m,a)=>"Balance: "+a],
+  [/^(.+) \(reste D (.+)\)$/, (m,a,b)=>a+" (balance D "+b+")"],
+  [/^(.+) — reste D (.+)$/, (m,a,b)=>trMot(a)+" — balance D "+b],
+  [/^(.+) ([✗✓])$/, (m,a,b)=>({"Inscr.":"Reg.","Uniforme":"Uniform"}[a] || trMot(a))+" "+b],
+  [/^(\d+) élèves?$/, (m,a)=>a+(a==="1"?" student":" students")],
+  [/^(\d+) élève\(s\)$/, (m,a)=>a+" student(s)"],
+  [/^Trimestre (\d)$/, (m,a)=>"Term "+a],
+  [/^Trimestre (\d) · moyenne de chaque semaine sur 10$/, (m,a)=>"Term "+a+" · weekly average out of 10"],
+  [/^Trimestre actuel : T(\d) · (\d+) élèves?$/, (m,a,b)=>"Current term: T"+a+" · "+b+(b==="1"?" student":" students")],
+  [/^Trimestre actuel : T(\d)$/, (m,a)=>"Current term: T"+a],
+  [/^Sous 5\/10 deux semaines de suite : (.+)$/, (m,a)=>"Below 5/10 two weeks in a row: "+a],
+  [/^Semaine du (\S+) : (.+)$/, (m,a,b)=>"Week of "+a+": "+b],
+  [/^Semaine du (.+)$/, (m,a)=>"Week of "+a],
+  [/^Connecté : (.*) — rôle : Directeur \(accès complet\)$/, (m,a)=>"Signed in: "+a+" — role: Director (full access)"],
+  [/^Connecté : (.*) — rôle : Manager-caissier.*$/, (m,a)=>"Signed in: "+a+" — role: Manager-cashier (daily income and expenses — no reports or salaries)"],
+  [/^Encaissé \((\d+)\)$/, (m,a)=>"Collected ("+a+")"],
+  [/^Dépensé \((\d+)\)$/, (m,a)=>"Spent ("+a+")"],
+  [/^Ex : (.+)$/, (m,a)=>"E.g.: "+a],
+  [/^(\d)\. (.+)$/, (m,a,b)=>DICO_EN[b] !== undefined ? a+". "+DICO_EN[b] : m],
+  [/^Paiement de (.+) enregistré ✓$/, (m,a)=>"Payment of "+a+" recorded ✓"],
+  [/^Impossible : (\d+) élève\(s\) dans cette cohorte\.$/, (m,a)=>"Not possible: "+a+" student(s) in this cohort."],
+  [/^Supprimer définitivement (.*) \?\nSes notes et paiements resteront dans l'historique\.$/, (m,a)=>"Permanently delete "+a+"?\nTheir grades and payments will remain in the history."],
+  [/^Bulletin — Trimestre (\d)$/, (m,a)=>"Report card — Term "+a],
+  [/^(.+) — Cohorte (.+)$/, (m,a,b)=>a+" — Cohort "+b],
+  [/^Cohorte (.+)$/, (m,a)=>"Cohort "+a],
+  [/^(.* · .*)$/, (m,a)=>a.split(" · ").map(p => p.trim() ? trEN(p).trim() : p).join(" · ")]
+];
+function trEN(txt){
+  if(txt == null) return txt;
+  const brut = String(txt), cle = brut.trim();
+  if(!cle) return brut;
+  if(DICO_EN[cle] !== undefined) return brut.replace(cle, DICO_EN[cle]);
+  for(const [rx, fn] of RX_EN){
+    const m = cle.match(rx);
+    if(m){ const r = fn(...m); if(r !== m[0]) return brut.replace(cle, r); }
+  }
+  return brut;
+}
+/* Fenêtres natives (confirmation, code) traduites aussi */
+(function(){
+  const c0 = window.confirm.bind(window), p0 = window.prompt.bind(window), a0 = window.alert.bind(window);
+  window.confirm = m => c0(LANG === "en" ? trEN(m) : m);
+  window.prompt  = (m, d) => p0(LANG === "en" ? trEN(m) : m, d);
+  window.alert   = m => a0(LANG === "en" ? trEN(m) : m);
+})();
 let _translating = false;
 function traduirePage(){
   _translating = true;
@@ -700,14 +757,11 @@ function traduirePage(){
     while((n = walker.nextNode())){
       const brut = n.nodeValue;
       if(!brut || !brut.trim()) continue;
-      if(n.__fr === undefined) n.__fr = brut;
+      if(n.__fr === undefined || (brut !== n.__fr && brut !== n.__en)) n.__fr = brut;
       if(LANG === "en"){
-        const cle = n.__fr.trim();
-        if(DICO_EN[cle] !== undefined){
-          n.nodeValue = n.__fr.replace(cle, DICO_EN[cle]);
-        } else {
-          n.nodeValue = n.__fr;
-        }
+        const t = trEN(n.__fr);
+        n.__en = t;
+        if(n.nodeValue !== t) n.nodeValue = t;
       } else {
         if(brut !== n.__fr) n.nodeValue = n.__fr;
       }
@@ -715,8 +769,14 @@ function traduirePage(){
     document.querySelectorAll("[placeholder]").forEach(el=>{
       if(el.__frP === undefined) el.__frP = el.getAttribute("placeholder");
       const cle = (el.__frP||"").trim();
-      el.setAttribute("placeholder", (LANG === "en" && DICO_EN[cle]) ? DICO_EN[cle] : el.__frP);
+      el.setAttribute("placeholder", LANG === "en" ? trEN(el.__frP||"") : el.__frP);
     });
+    document.querySelectorAll("[title]").forEach(el=>{
+      if(el.__frT === undefined) el.__frT = el.getAttribute("title");
+      const v = LANG === "en" ? trEN(el.__frT||"") : el.__frT;
+      if(el.getAttribute("title") !== v) el.setAttribute("title", v);
+    });
+    document.documentElement.lang = LANG;
   } finally {
     _translating = false;
   }
@@ -733,7 +793,7 @@ new MutationObserver(()=>{
   if(_translating || _traduireProg) return;
   _traduireProg = true;
   requestAnimationFrame(()=>{ _traduireProg = false; traduirePage(); });
-}).observe(document.body, {childList:true, subtree:true});
+}).observe(document.body, {childList:true, subtree:true, characterData:true});
 window.addEventListener("load", traduirePage);
 function avatarHtml(e){
   if(e && e.photo) return '<div class="avatar"><img src="'+e.photo+'" alt=""></div>';
@@ -876,6 +936,15 @@ function relancer(eleveId){
   const s = situationEleve(e);
   if(s.reste <= 0){ toast("Tout est déjà payé ✓"); return; }
   const dus = s.postes.filter(x => x.du && x.reste > 0).map(x => "• " + x.label + " : " + money(x.reste)).join("\n");
+  if(LANG === "en"){
+    const dusEn = s.postes.filter(x => x.du && x.reste > 0).map(x => "• " + trMot(x.label) + ": " + money(x.reste)).join("\n");
+    waOpen(e.telephone, "🧵 DAFD Academy — Fee reminder\n\n"
+      + "Hello " + (e.prenom||"") + ",\n"
+      + "There is " + money(s.reste) + " left to pay:\n" + dusEn + "\n"
+      + "Please come to the academy to settle it.\n\n"
+      + "Djamil Academy of Fashion Design — Bakau New Town");
+    return;
+  }
   const msg = "🧵 DAFD Académie — Rappel de scolarité\n\n"
     + "Bonjour " + (e.prenom||"") + ",\n"
     + "Il reste " + money(s.reste) + " à régler :\n" + dus + "\n"
@@ -1545,8 +1614,8 @@ function ccEleve(eid, trim){
 function rubriqueDe(mat){
   const m = String(mat || "").toLowerCase();
   if(/pratique d.atelier|workshop/.test(m)) return "ate";
-  if(/patron|coupe/.test(m)) return "pat";
-  if(/couture|montage|sewing/.test(m)) return "cou";
+  if(/patron|coupe|pattern|drafting|cutting/.test(m)) return "pat";
+  if(/couture|montage|sewing|construction/.test(m)) return "cou";
   return null;
 }
 function majFinale(inp){
@@ -1846,7 +1915,15 @@ async function savePaiement(){
     await db.collection("paiements").add(data);
     const reste = apres ? apres.reste : 0;
     const dus = apres ? apres.postes.filter(x => x.du && x.reste > 0).map(x => "• " + x.label + " : " + money(x.reste)).join("\n") : "";
-    const recu = "🧵 DAFD Académie — Reçu de paiement\n\n"
+    const recu = LANG === "en"
+      ? "🧵 DAFD Academy — Payment receipt\n\n"
+        + "Student: " + (e ? (e.prenom||"")+" "+(e.nom||"") : "") + "\n"
+        + "For: " + trMot(posteLabel(data.poste)) + "\n"
+        + "Amount received: " + money(data.montant) + " (" + trMot(data.mode) + ")\n"
+        + "Date: " + fmtDate(data.date) + "\n"
+        + (reste > 0 ? "Balance to pay: " + money(reste) + "\n" + (apres ? apres.postes.filter(x => x.du && x.reste > 0).map(x => "• " + trMot(x.label) + ": " + money(x.reste)).join("\n") : "") : "✅ All fees to date are paid") + "\n\n"
+        + "Thank you for your trust!\nDjamil Academy of Fashion Design — Bakau New Town"
+      : "🧵 DAFD Académie — Reçu de paiement\n\n"
       + "Élève : " + (e ? (e.prenom||"")+" "+(e.nom||"") : "") + "\n"
       + "Pour : " + posteLabel(data.poste) + "\n"
       + "Montant reçu : " + money(data.montant) + " (" + data.mode + ")\n"
@@ -1857,8 +1934,9 @@ async function savePaiement(){
     window._recuTexte = recu;
     openModal(
       '<div class="close-row"><h2>Paiement enregistré ✓</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
-      + '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b> pour ' + esc(posteLabel(data.poste)) + '.'
-      + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Tout est payé 🎉') + '</p>'
+      + (LANG === "en"
+        ? '<p class="muted">' + money(data.montant) + ' received from <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b> for ' + esc(trMot(posteLabel(data.poste))) + '.' + (reste > 0 ? ' Balance: <b>' + money(reste) + '</b>.' : ' Everything is paid 🎉') + '</p>'
+        : '<p class="muted">' + money(data.montant) + ' reçu de <b>' + (e ? esc(e.prenom)+' '+esc(e.nom) : '') + '</b> pour ' + esc(posteLabel(data.poste)) + '.' + (reste > 0 ? ' Reste : <b>' + money(reste) + '</b>.' : ' Tout est payé 🎉') + '</p>')
       + '<div style="margin-top:16px"><button class="btn gold" onclick="waOpen(window._recuTel, window._recuTexte);closeModal()">📲 Envoyer le reçu WhatsApp</button></div>'
       + '<div style="margin-top:10px"><button class="btn ghost" style="width:100%" onclick="closeModal()">Fermer sans envoyer</button></div>'
     );
