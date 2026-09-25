@@ -94,6 +94,9 @@ header.appbar{
   font-size:12px;background:rgba(255,255,255,.12);padding:6px 11px;border-radius:20px;
   color:#fff;display:flex;align-items:center;gap:6px;
 }
+#btnLang{margin-left:8px;display:flex;padding:2px;border-radius:16px;background:transparent;border:1.5px solid var(--gold);flex-shrink:0}
+#btnLang .lg{padding:4px 9px;border-radius:13px;font-weight:800;font-size:12px;color:var(--gold-soft);opacity:.7}
+#btnLang .lg.on{background:var(--gold);color:var(--indigo);opacity:1}
 .userchip .role{color:var(--gold);font-weight:700;white-space:nowrap}
 .appbar-row{gap:8px}
 .appbar-row > div:first-child{min-width:0;flex-shrink:0}
@@ -359,7 +362,7 @@ td.num,th.num{text-align:right}
         <span id="chipName">—</span>
         <span class="role" id="chipRole"></span>
       </div>
-      <button id="btnLang" onclick="basculerLangue()" style="margin-left:8px;padding:6px 12px;border-radius:16px;font-weight:800;font-size:12.5px;background:transparent;color:var(--gold);border:1.5px solid var(--gold);flex-shrink:0">EN</button>
+      <button id="btnLang" onclick="basculerLangue()"><span class="lg on">FR</span><span class="lg">EN</span></button>
     </div>
   </header>
 
@@ -751,7 +754,10 @@ function traduirePage(){
   _translating = true;
   try{
     const btn = document.getElementById("btnLang");
-    if(btn) btn.textContent = LANG === "fr" ? "EN" : "FR";
+    if(btn){
+      btn.innerHTML = '<span class="lg'+(LANG==="fr"?" on":"")+'">FR</span><span class="lg'+(LANG==="en"?" on":"")+'">EN</span>';
+      btn.setAttribute("aria-label", LANG === "fr" ? "Langue : français. Toucher pour passer en anglais" : "Language: English. Tap to switch to French");
+    }
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n;
     while((n = walker.nextNode())){
