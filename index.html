@@ -591,6 +591,7 @@ td.num,th.num{text-align:right}
         <label>Uniforme</label><input type="number" id="tUniforme" inputmode="numeric">
         <label>Réparation machine</label><input type="number" id="tMachine" inputmode="numeric">
         <label>Chaque trimestre</label><input type="number" id="tTrimestre" inputmode="numeric">
+        <label>Livre (cahier de l'élève), chaque trimestre</label><input type="number" id="tLivre" inputmode="numeric">
         <div style="margin-top:12px">
           <button class="btn small" id="btnSaveTarifs">Enregistrer les tarifs</button>
         </div>
@@ -758,7 +759,7 @@ const DICO_EN = {
   "Ce code est demandé avant toute suppression d'élève. Gardez-le confidentiel.":"This code is required before any student deletion. Keep it confidential.",
   "Tout payé":"All paid","Doivent encore":"Still owe","Tous":"All","Non payé":"Unpaid","Payé ✓":"Paid ✓","À venir":"Upcoming","Avance":"Advance","Versement":"Payment","Versements":"Payments",
   "Inscription":"Registration","Uniforme":"Uniform","Réparation machine":"Machine repair","Payer quoi ?":"Payment for","Autre / avance libre":"Other / free advance",
-  "Total dû à ce jour":"Total due to date","Tarifs de scolarité":"Tuition rates","Enregistrer les tarifs":"Save rates","Chaque trimestre":"Each term",
+  "Total dû à ce jour":"Total due to date","Tarifs de scolarité":"Tuition rates","Enregistrer les tarifs":"Save rates","Chaque trimestre":"Each term","Livre (cahier de l'élève), chaque trimestre":"Book (student workbook), each term","Livre T1":"Book T1","Livre du trimestre 1":"Term 1 book","Livre T2":"Book T2","Livre du trimestre 2":"Term 2 book","Livre T3":"Book T3","Livre du trimestre 3":"Term 3 book","Livre T4":"Book T4","Livre du trimestre 4":"Term 4 book","Livre T5":"Book T5","Livre du trimestre 5":"Term 5 book","Livre T6":"Book T6","Livre du trimestre 6":"Term 6 book",
   "Note du jour":"Daily mark","Progression":"Progress","Notes du trimestre":"Term grades","Tout à 2":"All 2","Absent":"Absent","Enregistrer les notes du jour":"Save daily marks","Notes du jour enregistrées ✓":"Daily marks saved ✓","Progression par semaine":"Weekly progress","Date":"Date","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Présence":"Attendance","À voir en entretien":"Needs a follow-up talk","Progression (note du jour)":"Progress (daily marks)","Contrôle continu /20":"Coursework /20","Examen /20":"Exam /20","Finale /20":"Final /20",
   "Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).":"These amounts are used to work out, for each student, what is paid and what is still due (in dalasis)."
 };
@@ -771,6 +772,7 @@ const RX_EN = [
   [/^(.+) \(reste D (.+)\)$/, (m,a,b)=>a+" (balance D "+b+")"],
   [/^(.+) — reste D (.+)$/, (m,a,b)=>trMot(a)+" — balance D "+b],
   [/^(.+) ([✗✓])$/, (m,a,b)=>({"Inscr.":"Reg.","Uniforme":"Uniform"}[a] || trMot(a))+" "+b],
+  [/^Livre T(\d) · reste (.+)$/, (m,a,b)=>"Book T"+a+" · balance "+b],
   [/^(\d+) élèves?$/, (m,a)=>a+(a==="1"?" student":" students")],
   [/^(\d+) élève\(s\)$/, (m,a)=>a+" student(s)"],
   [/^Trimestre (\d)$/, (m,a)=>"Term "+a],
@@ -924,7 +926,7 @@ function totalPayeEleve(eleveId){
 }
 
 /* ---------- Frais par poste : inscription, uniforme, machine, trimestres ---------- */
-const TARIFS_DEFAUT = {inscription:2500, uniforme:200, machine:500, trimestre:19000};
+const TARIFS_DEFAUT = {inscription:2500, uniforme:1750, machine:500, trimestre:19500, livre:1000};
 let tarifs = Object.assign({}, TARIFS_DEFAUT);
 let soldesFiltre = "tous";
 
@@ -934,6 +936,7 @@ function posteLabel(k){
   if(k === "uniforme") return "Uniforme";
   if(k === "machine") return "Réparation machine";
   if(/^T[1-6]$/.test(k || "")) return "Trimestre " + k.slice(1);
+  if(/^L[1-6]$/.test(k || "")) return "Livre du trimestre " + k.slice(1);
   return "Avance / autre";
 }
 /* Liste des postes d'un élève. Les trimestres sont « dus » jusqu'au trimestre
@@ -948,6 +951,13 @@ function postesEleve(e){
   ];
   for(let i = 1; i <= 6; i++){
     L.push({k:"T"+i, court:"T"+i, label:"Trimestre "+i, montant:Number(tarifs.trimestre)||0, du:i <= tCur});
+  }
+  /* Livre (cahier de l'élève) : un par trimestre, dû dès que le trimestre commence */
+  const prixLivre = Number(tarifs.livre) || 0;
+  if(prixLivre > 0){
+    for(let i = 1; i <= tCur && i <= 6; i++){
+      L.push({k:"L"+i, court:"Livre T"+i, label:"Livre du trimestre "+i, montant:prixLivre, du:true});
+    }
   }
   return L;
 }
@@ -1189,6 +1199,7 @@ function startData(){
     if($("tInscription")){
       $("tInscription").value = tarifs.inscription; $("tUniforme").value = tarifs.uniforme;
       $("tMachine").value = tarifs.machine; $("tTrimestre").value = tarifs.trimestre;
+      if($("tLivre")) $("tLivre").value = tarifs.livre;
     }
     renderAll();
   }, err => {}));
@@ -2486,7 +2497,7 @@ $("btnSaveAdminCode").addEventListener("click", async () => {
 $("btnSaveTarifs").addEventListener("click", async () => {
   if(role !== "directeur"){ toast("🔒 Réservé au directeur."); return; }
   const v = id => Math.max(0, Number($(id).value) || 0);
-  const t = {inscription:v("tInscription"), uniforme:v("tUniforme"), machine:v("tMachine"), trimestre:v("tTrimestre")};
+  const t = {inscription:v("tInscription"), uniforme:v("tUniforme"), machine:v("tMachine"), trimestre:v("tTrimestre"), livre:v("tLivre")};
   try{
     await db.collection("config").doc("tarifs").set(t);
     toast("Tarifs enregistrés ✓");
