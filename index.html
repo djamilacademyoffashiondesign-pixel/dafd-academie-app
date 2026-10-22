@@ -322,6 +322,35 @@ td.num,th.num{text-align:right}
 .bar.hi{background:var(--success)}.bar.mid{background:var(--warn)}.bar.lo{background:var(--danger)}
 .cc-hint{font-size:12.5px;color:var(--ink-soft)}
 
+/* ---------- Import / pointage ---------- */
+.imp-table td,.imp-table th{font-size:13px}
+.imp-table tr.dup td{opacity:.5}
+.ta-big{width:100%;min-height:150px;font-family:inherit;font-size:15px}
+.note-input.filled{outline:2px solid var(--gold)}
+#scanBg{position:fixed;inset:0;background:#0d1330;z-index:300;display:none;flex-direction:column;color:#fff}
+#scanBg.open{display:flex}
+#scanTop{display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+#scanTop b{font-size:18px}
+#scanTop button{background:rgba(255,255,255,.15);color:#fff;border-radius:10px;padding:10px 14px;font-weight:700}
+#scanVideoWrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#scanVideo{width:100%;height:100%;object-fit:cover}
+#scanFrame{position:absolute;width:62vmin;height:62vmin;border:4px solid var(--gold);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+#scanFlash{padding:18px 16px;text-align:center;min-height:96px;font-size:18px;background:#1b2350}
+#scanFlash.in{background:#1f7a46}#scanFlash.out{background:#b4432f}#scanFlash.warn{background:#9a6b00}
+#scanFlash .big{font-size:26px;font-weight:800;display:block;margin-bottom:4px}
+#scanManual{display:flex;gap:8px;padding:12px 16px;background:#141b42}
+#scanManual select{flex:1}
+#scanManual button{white-space:nowrap}
+.pt-row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line,#eee);font-size:14px}
+.pt-row:last-child{border-bottom:0}
+.pt-in{color:var(--success)}.pt-out{color:var(--danger)}
+.qr-sheet{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qr-card{border:1.5px dashed #C6A24B;border-radius:10px;padding:10px;text-align:center;break-inside:avoid;page-break-inside:avoid;font-family:Arial,sans-serif}
+.qr-card img.qr{width:120px;height:120px;image-rendering:pixelated}
+.qr-card .n{font-weight:700;font-size:14px;margin-top:4px;color:#232E5C}
+.qr-card .c{font-size:11px;color:#5A607A}
+.qr-card .h{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#C6A24B;font-weight:700}
+
 /* ---------- Print (bulletins) ---------- */
 #printArea{display:none}
 @media print{
@@ -381,6 +410,11 @@ td.num,th.num{text-align:right}
     <!-- ===== Tableau de bord ===== -->
     <section id="viewDash">
       <div class="grid3" id="dashStats"></div>
+      <div class="card" style="margin-top:14px" id="dashPointageCard">
+        <h2>Pointage du jour</h2>
+        <div id="dashPointage"></div>
+        <div style="margin-top:12px"><button class="btn gold" id="btnScanner">📷 Ouvrir le pointage (tablette)</button></div>
+      </div>
       <div class="card" style="margin-top:14px">
         <h2>Cohortes en cours</h2>
         <div id="dashCohortes"></div>
@@ -407,6 +441,9 @@ td.num,th.num{text-align:right}
           <option value="diplome">Diplômés</option>
           <option value="abandonne">Abandons</option>
         </select>
+      </div>
+      <div style="margin:0 0 10px">
+        <button class="btn small ghost" id="btnImportEleves">📋 Importer une liste d'élèves</button>
       </div>
       <div class="card" id="listeEleves"></div>
     </section>
@@ -468,6 +505,7 @@ td.num,th.num{text-align:right}
         <select id="notesMatiere"></select>
         <div id="notesGrid" class="tablewrap"></div>
         <div style="margin-top:14px" id="notesSaveRow" class="hidden">
+          <button class="btn small ghost" id="btnCollerNotes" style="margin-bottom:10px">📋 Coller les notes d'une feuille</button>
           <button class="btn" id="btnSaveNotes">Enregistrer les notes</button>
         </div>
       </div>
@@ -539,6 +577,13 @@ td.num,th.num{text-align:right}
           <button class="btn small" id="btnSaveMatieres">Enregistrer les matières</button>
         </div>
       </div>
+      <div class="card">
+        <h2>Cartes QR des élèves</h2>
+        <p class="muted">Une carte par élève, à imprimer, découper et plastifier. L'élève la présente à la tablette en arrivant et en partant.</p>
+        <label>Cohorte</label>
+        <select id="qrCohorte"></select>
+        <div style="margin-top:12px"><button class="btn" id="btnCartesQR">🖨 Imprimer les cartes</button></div>
+      </div>
       <div class="card" id="tarifsCard">
         <h2>Tarifs de scolarité</h2>
         <p class="muted">Ces montants servent à calculer, pour chaque élève, ce qui est payé et ce qui reste à payer (en dalasis).</p>
@@ -578,6 +623,12 @@ td.num,th.num{text-align:right}
   </main>
 
   <button class="fab hidden" id="fabAdd" title="Ajouter">+</button>
+  <div id="scanBg" aria-modal="true" role="dialog">
+    <div id="scanTop"><b>Pointage — entrée / sortie</b><button id="btnScanClose">✕ Fermer</button></div>
+    <div id="scanVideoWrap"><video id="scanVideo" playsinline muted></video><div id="scanFrame"></div></div>
+    <div id="scanFlash">Présentez la carte QR devant la caméra.</div>
+    <div id="scanManual"><select id="scanEleve"></select><button class="btn small gold" id="btnScanManuel">Pointer</button></div>
+  </div>
 
   <nav class="bottom">
     <button data-view="Dash" class="active"><span class="ico">◈</span>Tableau</button>
@@ -687,7 +738,7 @@ function statutLabel(s){
    textes connus. Le choix est mémorisé sur l'appareil. */
 let LANG = localStorage.getItem("dafd_lang") || "fr";
 const DICO_EN = {
-  "DAFD Académie":"DAFD Academy","Directeur":"Director","Manager":"Manager","+ Enregistrer un paiement":"+ Record a payment","+ Enregistrer une dépense":"+ Record an expense","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Autres":"Other","Loyer":"Rent","Salaires":"Salaries","Transport":"Transport","Électricité & eau":"Electricity & water","Internet & téléphone":"Internet & phone","Matériel & tissus":"Materials & fabrics","Modifier la cohorte":"Edit cohort","Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu.":"Suggested amount = what is left. For an advance, enter the amount received.","📷 Ajouter la photo":"📷 Add photo","Moy.":"Avg.","Email":"Email","Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d'atelier (onglet « Notes du trimestre »).":"These marks count for 40% in the pattern drafting, sewing and workshop practice subjects (“Term grades” tab).","Contrôle continu couture":"Coursework, sewing","Contrôle continu patronage":"Coursework, pattern drafting","Contrôle continu du trimestre, sur 20":"Term coursework, out of 20","Moyenne de chaque semaine, sur 10":"Weekly average, out of 10","Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d'examen compte seule.":"Final mark = 40% coursework (daily marks) + 60% exam. Without daily marks, the exam mark counts alone.","Pièce complète aujourd'hui (compte double)":"Complete garment today (counts double)","Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.":"For each student, 0, 1 or 2 marks per criterion. Total out of 10. Tap a value again to clear it.","Pratique d'atelier":"Workshop practice","Cohorte":"Cohort","Contrôle continu /20":"Coursework /20","Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.":"The emails listed here can see the finances. Other accounts (manager, teachers) only see students and grades. One email per line.","Patronage / Coupe à plat":"Pattern drafting / Flat cutting","Couture & Montage":"Sewing & Construction","Dessin de mode / Stylisme":"Fashion drawing / Design","Technologie des textiles":"Textile technology","Moulage / Drapé":"Draping","Tenues traditionnelles africaines":"Traditional African garments","Histoire de la mode":"Fashion history","Gestion d'atelier":"Workshop management","Choisissez une cohorte et une date.":"Choose a cohort and a date.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Choisissez une cohorte.":"Choose a cohort.","Pas encore de notes du jour pour ce trimestre.":"No daily marks for this term yet.","Pas encore de notes du jour ce trimestre.":"No daily marks this term yet.","À voir en entretien":"Needs a follow-up talk","Présence":"Attendance","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Accès enregistrés ✓ (effet à la prochaine connexion)":"Access saved ✓ (applies at next sign-in)","Accès refusé par Firebase : autorisez la collection « suivi » dans les règles.":"Access denied by Firebase: allow the “suivi” collection in the rules.","Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?":"Warning: your own email is not in the list. You will lose access to the finances. Continue?","Aucune note à enregistrer.":"No marks to save.","Choisissez la date du paiement.":"Choose the payment date.","Choisissez un élève.":"Choose a student.","Choisissez une image.":"Choose an image.","Code actuel incorrect.":"Current code incorrect.","Code de sécurité changé ✓":"Security code changed ✓","Code incorrect. Suppression annulée.":"Wrong code. Deletion cancelled.","Cohorte enregistrée ✓":"Cohort saved ✓","Cohorte supprimée":"Cohort deleted","Connexion…":"Signing in…","Créez d'abord une cohorte (onglet Plus).":"Create a cohort first (More tab).","Dépense supprimée":"Expense deleted","Entrez au moins un nom.":"Enter at least one name.","Entrez au moins une matière.":"Enter at least one subject.","Entrez un libellé.":"Enter a description.","Entrez un montant valide.":"Enter a valid amount.","Entrez un nom de cohorte.":"Enter a cohort name.","Entrez votre email et votre mot de passe.":"Enter your email and password.","Erreur d'enregistrement des notes.":"Error saving grades.","Erreur d'enregistrement des tarifs.":"Error saving rates.","Erreur d'enregistrement du paiement.":"Error saving the payment.","Erreur d'enregistrement.":"Error while saving.","Erreur d'enregistrement. Réessayez.":"Error while saving. Try again.","Erreur de lecture du fichier.":"Error reading the file.","Erreur lors de la suppression.":"Error while deleting.","Il faut au moins un email directeur.":"At least one director email is required.","Impossible de lire cette image.":"Cannot read this image.","Le nouveau code doit avoir au moins 4 caractères.":"The new code must have at least 4 characters.","Matières enregistrées ✓":"Subjects saved ✓","Paiement supprimé":"Payment deleted","Pas de numéro WhatsApp pour cet élève.":"No WhatsApp number for this student.","Photo ajoutée ✓":"Photo added ✓","Seul le directeur peut supprimer un paiement.":"Only the director can delete a payment.","Seul le directeur peut supprimer une dépense.":"Only the director can delete an expense.","Supprimer ce paiement ?":"Delete this payment?","Supprimer cette cohorte ?":"Delete this cohort?","Supprimer cette dépense ?":"Delete this expense?","Tarifs enregistrés ✓":"Rates saved ✓","Tout est déjà payé ✓":"Everything is already paid ✓","Élève enregistré ✓":"Student saved ✓","Élève supprimé":"Student deleted","🔐 Code de sécurité administrateur :":"🔐 Administrator security code:","🔐 Entrez d'abord le code actuel :":"🔐 First enter the current code:","🔒 Réservé au directeur.":"🔒 Director only.","🔒 Seul le directeur peut modifier une fiche élève.":"🔒 Only the director can edit a student record.","🔒 Seul le directeur peut supprimer un élève.":"🔒 Only the director can delete a student.","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt","Fermer sans envoyer":"Close without sending","Ajouter":"Add","Connexion impossible. Vérifiez email et mot de passe.":"Cannot sign in. Check your email and password.","Problème réseau. Vérifiez votre connexion et réessayez.":"Network problem. Check your connection and try again.","Trop d'essais. Attendez quelques minutes puis réessayez.":"Too many attempts. Wait a few minutes and try again.","votre@email.com":"your@email.com","Mot de passe oublié ?":"Forgot password?","🔑 Changer mon mot de passe":"🔑 Change my password","Afficher le mot de passe":"Show password","Masquer le mot de passe":"Hide password","Écrivez d'abord votre email ci-dessus, puis touchez « Mot de passe oublié ? ».":"First type your email above, then tap “Forgot password?”.","Envoi impossible. Vérifiez l'email et réessayez.":"Could not send. Check the email and try again.","Envoi impossible. Réessayez plus tard.":"Could not send. Try again later.","Connexion impossible. Vérifiez email et mot de passe. (Code oublié ? Touchez « Mot de passe oublié ? » ci-dessous.)":"Cannot sign in. Check your email and password. (Forgot it? Tap “Forgot password?” below.)","Accès non vérifié (réseau). Déconnectez-vous puis reconnectez-vous.":"Access not verified (network). Log out and sign in again.",
+  "DAFD Académie":"DAFD Academy","Directeur":"Director","Manager":"Manager","+ Enregistrer un paiement":"+ Record a payment","+ Enregistrer une dépense":"+ Record an expense","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Autres":"Other","Loyer":"Rent","Salaires":"Salaries","Transport":"Transport","Électricité & eau":"Electricity & water","Internet & téléphone":"Internet & phone","Matériel & tissus":"Materials & fabrics","Modifier la cohorte":"Edit cohort","Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu.":"Suggested amount = what is left. For an advance, enter the amount received.","📷 Ajouter la photo":"📷 Add photo","Moy.":"Avg.","Email":"Email","Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d'atelier (onglet « Notes du trimestre »).":"These marks count for 40% in the pattern drafting, sewing and workshop practice subjects (“Term grades” tab).","Contrôle continu couture":"Coursework, sewing","Contrôle continu patronage":"Coursework, pattern drafting","Contrôle continu du trimestre, sur 20":"Term coursework, out of 20","Moyenne de chaque semaine, sur 10":"Weekly average, out of 10","Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d'examen compte seule.":"Final mark = 40% coursework (daily marks) + 60% exam. Without daily marks, the exam mark counts alone.","Pièce complète aujourd'hui (compte double)":"Complete garment today (counts double)","Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.":"For each student, 0, 1 or 2 marks per criterion. Total out of 10. Tap a value again to clear it.","Pratique d'atelier":"Workshop practice","Cohorte":"Cohort","Contrôle continu /20":"Coursework /20","Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.":"The emails listed here can see the finances. Other accounts (manager, teachers) only see students and grades. One email per line.","Patronage / Coupe à plat":"Pattern drafting / Flat cutting","Couture & Montage":"Sewing & Construction","Dessin de mode / Stylisme":"Fashion drawing / Design","Technologie des textiles":"Textile technology","Moulage / Drapé":"Draping","Tenues traditionnelles africaines":"Traditional African garments","Histoire de la mode":"Fashion history","Gestion d'atelier":"Workshop management","Choisissez une cohorte et une date.":"Choose a cohort and a date.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Choisissez une cohorte.":"Choose a cohort.","Pas encore de notes du jour pour ce trimestre.":"No daily marks for this term yet.","Pas encore de notes du jour ce trimestre.":"No daily marks this term yet.","À voir en entretien":"Needs a follow-up talk","Présence":"Attendance","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Accès enregistrés ✓ (effet à la prochaine connexion)":"Access saved ✓ (applies at next sign-in)","Accès refusé par Firebase : autorisez la collection « suivi » dans les règles.":"Access denied by Firebase: allow the “suivi” collection in the rules.","Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?":"Warning: your own email is not in the list. You will lose access to the finances. Continue?","Aucune note à enregistrer.":"No marks to save.","Choisissez la date du paiement.":"Choose the payment date.","Choisissez un élève.":"Choose a student.","Choisissez une image.":"Choose an image.","Code actuel incorrect.":"Current code incorrect.","Code de sécurité changé ✓":"Security code changed ✓","Code incorrect. Suppression annulée.":"Wrong code. Deletion cancelled.","Cohorte enregistrée ✓":"Cohort saved ✓","Cohorte supprimée":"Cohort deleted","Connexion…":"Signing in…","Créez d'abord une cohorte (onglet Plus).":"Create a cohort first (More tab).","Dépense supprimée":"Expense deleted","Entrez au moins un nom.":"Enter at least one name.","Entrez au moins une matière.":"Enter at least one subject.","Entrez un libellé.":"Enter a description.","Entrez un montant valide.":"Enter a valid amount.","Entrez un nom de cohorte.":"Enter a cohort name.","Entrez votre email et votre mot de passe.":"Enter your email and password.","Erreur d'enregistrement des notes.":"Error saving grades.","Erreur d'enregistrement des tarifs.":"Error saving rates.","Erreur d'enregistrement du paiement.":"Error saving the payment.","Erreur d'enregistrement.":"Error while saving.","Erreur d'enregistrement. Réessayez.":"Error while saving. Try again.","Erreur de lecture du fichier.":"Error reading the file.","Erreur lors de la suppression.":"Error while deleting.","Il faut au moins un email directeur.":"At least one director email is required.","Impossible de lire cette image.":"Cannot read this image.","Le nouveau code doit avoir au moins 4 caractères.":"The new code must have at least 4 characters.","Matières enregistrées ✓":"Subjects saved ✓","Paiement supprimé":"Payment deleted","Pas de numéro WhatsApp pour cet élève.":"No WhatsApp number for this student.","Photo ajoutée ✓":"Photo added ✓","Seul le directeur peut supprimer un paiement.":"Only the director can delete a payment.","Seul le directeur peut supprimer une dépense.":"Only the director can delete an expense.","Supprimer ce paiement ?":"Delete this payment?","Supprimer cette cohorte ?":"Delete this cohort?","Supprimer cette dépense ?":"Delete this expense?","Tarifs enregistrés ✓":"Rates saved ✓","Tout est déjà payé ✓":"Everything is already paid ✓","Élève enregistré ✓":"Student saved ✓","Élève supprimé":"Student deleted","🔐 Code de sécurité administrateur :":"🔐 Administrator security code:","🔐 Entrez d'abord le code actuel :":"🔐 First enter the current code:","🔒 Réservé au directeur.":"🔒 Director only.","🔒 Seul le directeur peut modifier une fiche élève.":"🔒 Only the director can edit a student record.","🔒 Seul le directeur peut supprimer un élève.":"🔒 Only the director can delete a student.","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt","Fermer sans envoyer":"Close without sending","Ajouter":"Add","Connexion impossible. Vérifiez email et mot de passe.":"Cannot sign in. Check your email and password.","Problème réseau. Vérifiez votre connexion et réessayez.":"Network problem. Check your connection and try again.","Trop d'essais. Attendez quelques minutes puis réessayez.":"Too many attempts. Wait a few minutes and try again.","votre@email.com":"your@email.com","Mot de passe oublié ?":"Forgot password?","📋 Importer une liste d'élèves":"📋 Import a student list","Importer une liste d'élèves":"Import a student list","📋 Coller les notes d'une feuille":"📋 Paste grades from a sheet","Coller les notes":"Paste grades","Remplir le tableau":"Fill the table","Vérifier":"Check","Liste":"List","Actif (en cours)":"Active (current)","Diplômé (ancien élève)":"Graduated (former student)","Pointage du jour":"Today's check-in","📷 Ouvrir le pointage (tablette)":"📷 Open check-in (tablet)","Cartes QR des élèves":"Student QR cards","🖨 Imprimer les cartes":"🖨 Print cards","Pointage — entrée / sortie":"Check-in — in / out","✕ Fermer":"✕ Close","Pointer":"Check in","Présentez la carte QR devant la caméra.":"Hold the QR card in front of the camera.","Venus aujourd'hui":"Came today","Encore à l'école":"Still at school","Aucun passage enregistré aujourd'hui.":"No check-in today.","Carte oubliée ? Choisir l'élève…":"Forgot the card? Choose the student…","Aucune ligne lisible.":"No readable line.","déjà inscrit":"already enrolled","Aucun élève dans cette cohorte.":"No student in this cohort.","🔑 Changer mon mot de passe":"🔑 Change my password","Afficher le mot de passe":"Show password","Masquer le mot de passe":"Hide password","Écrivez d'abord votre email ci-dessus, puis touchez « Mot de passe oublié ? ».":"First type your email above, then tap “Forgot password?”.","Envoi impossible. Vérifiez l'email et réessayez.":"Could not send. Check the email and try again.","Envoi impossible. Réessayez plus tard.":"Could not send. Try again later.","Connexion impossible. Vérifiez email et mot de passe. (Code oublié ? Touchez « Mot de passe oublié ? » ci-dessous.)":"Cannot sign in. Check your email and password. (Forgot it? Tap “Forgot password?” below.)","Accès non vérifié (réseau). Déconnectez-vous puis reconnectez-vous.":"Access not verified (network). Log out and sign in again.",
   "Gestion scolaire":"School management","Tableau":"Dashboard","Élèves":"Students","Notes":"Grades","Finances":"Finances","Plus":"More",
   "Cohortes en cours":"Current cohorts","Finances du mois":"This month's finances","Frais en retard":"Overdue fees","Élèves actifs":"Active students","Préinscrits 2026-27":"Pre-enrolled 2026-27","Abandons":"Dropouts","Diplômés":"Graduates","Actifs":"Active",
   "Encaissements":"Income","Dépenses":"Expenses","Solde du mois":"Month balance","Tous les frais sont à jour 🎉":"All fees are up to date 🎉","Élèves en retard":"Students overdue",
@@ -1150,6 +1201,7 @@ function startData(){
     depenses.sort((a,b) => String(b.date||"").localeCompare(String(a.date||"")));
     renderAll();
   }));
+  subPointage();
   if(role === "directeur"){
     $("directeursList").value = directeurs.join("\n");
   }
@@ -1157,6 +1209,8 @@ function startData(){
 function stopData(){
   unsubs.forEach(u => { try{u();}catch(e){} });
   unsubs = [];
+  if(typeof unsubPointage === "function"){ try{ unsubPointage(); }catch(e){} }
+  unsubPointage = null; pointageDate = "";
 }
 
 /* ---------- Navigation ---------- */
@@ -1189,7 +1243,7 @@ document.querySelectorAll(".pill-tabs button[data-fintab]").forEach(b => {
 /* ---------- Rendu global ---------- */
 function renderAll(){
   renderCohorteSelects();
-  if(currentView === "Dash") renderDash();
+  if(currentView === "Dash"){ renderDash(); subPointage(); renderPointageDash(); }
   if(currentView === "Eleves") renderEleves();
   if(currentView === "Notes"){ renderNotesGrid(); renderBullSelect(); renderSuiviJour(); renderProgression(); }
   if(currentView === "Finances") renderFinances();
@@ -1206,6 +1260,8 @@ function renderCohorteSelects(){
   const prevN = n.value;
   n.innerHTML = opts || '<option value="">Créez d\'abord une cohorte</option>';
   if(prevN) n.value = prevN;
+  const q = $("qrCohorte");
+  if(q){ const pq = q.value; q.innerHTML = '<option value="">Toutes cohortes</option>' + opts; q.value = pq; }
   ["sjCohorte","spCohorte"].forEach(idSel => {
     const el = $(idSel); if(!el) return;
     const pv = el.value;
@@ -2127,6 +2183,290 @@ async function deleteCohorte(id){
   try{ await db.collection("cohortes").doc(id).delete(); closeModal(); toast("Cohorte supprimée"); }
   catch(err){ toast("Erreur lors de la suppression."); }
 }
+
+
+/* ================= IMPORT D'UNE LISTE (feuille du manager) =================
+   Une ligne par élève : « Prénom Nom ; téléphone ; contact parent ; remarque ».
+   Séparateurs acceptés : ; , | tabulation. Le téléphone peut aussi être collé au nom. */
+function normNom(t){
+  return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
+}
+function cleNom(prenom, nom){ return normNom((prenom||"")+" "+(nom||"")).split(" ").filter(Boolean).sort().join(" "); }
+function parseLigneEleve(l){
+  l = l.replace(/^\s*(\d{1,3}[\.\)\-]|[-•*])\s*/, "").trim();   // retire « 1. », « - »…
+  if(!l) return null;
+  let parts = l.split(/\s*[;|\t]\s*|\s*,\s*/).map(x => x.trim()).filter(Boolean);
+  let nomComplet = parts.shift() || "";
+  let tel = "";
+  const mTel = nomComplet.match(/(\+?\d[\d\s\-\.]{5,}\d)/);
+  if(mTel){ tel = mTel[1].replace(/[^\d+]/g,""); nomComplet = nomComplet.replace(mTel[1], "").trim(); }
+  if(!tel && parts.length && /^\+?[\d\s\-\.]{6,}$/.test(parts[0])) tel = parts.shift().replace(/[^\d+]/g,"");
+  const mots = nomComplet.split(/\s+/).filter(Boolean);
+  if(!mots.length) return null;
+  let prenom, nom;
+  const cap = w => w.length > 1 && w === w.toUpperCase() && /[A-Z]/.test(w);
+  if(mots.length === 1){ prenom = mots[0]; nom = ""; }
+  else if(cap(mots[0]) && !cap(mots[mots.length-1])){ nom = mots[0]; prenom = mots.slice(1).join(" "); } // « CEESAY Fatou »
+  else { nom = mots[mots.length-1]; prenom = mots.slice(0,-1).join(" "); }
+  const joli = w => w.split(/([\s\-])/).map(x => x.length > 1 ? x[0].toUpperCase()+x.slice(1).toLowerCase() : x).join("");
+  return { prenom: joli(prenom), nom: joli(nom), telephone: tel, contactParent: parts.shift() || "", remarques: parts.join(" ; ") };
+}
+let _importLignes = [];
+function openImportEleves(){
+  const cohOpts = cohortes.map(c => '<option value="'+c.id+'">'+esc(c.nom)+'</option>').join("");
+  openModal(
+    '<div class="close-row"><h2>Importer une liste d\'élèves</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<p class="muted">Une ligne par élève : <b>Prénom Nom ; téléphone ; contact parent</b>. Seul le nom est obligatoire.</p>'
+    + '<p class="cc-hint">📷 Feuille écrite à la main ? Prenez-la en photo et envoyez-la à Claude : il vous renvoie la liste prête à coller ici.</p>'
+    + '<div class="grid2"><div><label>Cohorte</label><select id="impCohorte">'+cohOpts+'</select></div>'
+    + '<div><label>Statut</label><select id="impStatut">'
+    + '<option value="actif">Actif (en cours)</option><option value="preinscrit">Préinscrit 2026-27</option>'
+    + '<option value="diplome">Diplômé (ancien élève)</option><option value="abandonne">Abandon</option></select></div></div>'
+    + '<label>Date d\'inscription</label><input type="date" id="impDate" value="'+todayISO()+'">'
+    + '<label>Liste</label><textarea id="impTexte" class="ta-big" placeholder="Fatou Ceesay ; 7712345 ; Mère 3654321&#10;Awa Jallow ; 2201234&#10;Lamin Sanneh"></textarea>'
+    + '<div id="impApercu"></div>'
+    + '<div class="actions"><button class="btn ghost" onclick="apercuImport()">Vérifier</button>'
+    + '<button class="btn gold" id="btnImpOk" onclick="validerImport()" disabled style="opacity:.5">Enregistrer</button></div>'
+  );
+  if(!cohortes.length) $("impApercu").innerHTML = '<p class="login-error">Créez d\'abord une cohorte (onglet Plus).</p>';
+}
+function apercuImport(){
+  const existants = new Set(eleves.map(e => cleNom(e.prenom, e.nom)));
+  const vus = new Set();
+  _importLignes = $("impTexte").value.split(/\r?\n/).map(parseLigneEleve).filter(Boolean).map(x => {
+    const k = cleNom(x.prenom, x.nom);
+    x.doublon = existants.has(k) || vus.has(k);
+    vus.add(k);
+    return x;
+  });
+  const n = _importLignes.filter(x => !x.doublon).length;
+  if(!_importLignes.length){ $("impApercu").innerHTML = '<p class="muted">Aucune ligne lisible.</p>'; return; }
+  $("impApercu").innerHTML = '<div class="section-title">'+n+' élève'+(n>1?"s":"")+' à ajouter</div>'
+    + '<div class="tablewrap"><table class="imp-table"><thead><tr><th>Prénom</th><th>Nom</th><th>Téléphone</th><th>Parent</th></tr></thead><tbody>'
+    + _importLignes.map(x => '<tr class="'+(x.doublon?"dup":"")+'"><td>'+esc(x.prenom)+'</td><td>'+esc(x.nom)+(x.doublon?' <span class="badge retard">déjà inscrit</span>':'')+'</td><td>'+esc(x.telephone)+'</td><td>'+esc(x.contactParent)+'</td></tr>').join("")
+    + '</tbody></table></div>';
+  const b = $("btnImpOk"); b.disabled = !n; b.style.opacity = n ? "1" : ".5";
+}
+async function validerImport(){
+  const cid = $("impCohorte").value;
+  if(!cid){ toast("Créez d'abord une cohorte (onglet Plus)."); return; }
+  const aAjouter = _importLignes.filter(x => !x.doublon);
+  if(!aAjouter.length) return;
+  const statut = $("impStatut").value, date = $("impDate").value || todayISO();
+  const batch = db.batch();
+  aAjouter.forEach(x => batch.set(db.collection("eleves").doc(), {
+    prenom:x.prenom, nom:x.nom, sexe:"F", dateNaissance:"", telephone:x.telephone, contactParent:x.contactParent,
+    adresse:"", cohorteId:cid, statut:statut, dateInscription:date, remarques:x.remarques, photo:"",
+    importePar: currentUser ? currentUser.email : ""
+  }));
+  try{ await batch.commit(); closeModal(); toast(aAjouter.length + " élève(s) importé(s) ✓"); }
+  catch(err){ toast("Erreur d'enregistrement. Réessayez."); }
+}
+$("btnImportEleves").addEventListener("click", openImportEleves);
+
+/* ================= COLLER LES NOTES D'UNE FEUILLE =================
+   Une ligne par élève : « Prénom Nom 14,5 ». Les notes remplissent le tableau,
+   on vérifie, puis on touche « Enregistrer les notes ». */
+$("btnCollerNotes").addEventListener("click", () => {
+  openModal(
+    '<div class="close-row"><h2>Coller les notes</h2><button class="xbtn" onclick="closeModal()">×</button></div>'
+    + '<p class="muted">Une ligne par élève : <b>Prénom Nom note</b> (ex. « Fatou Ceesay 14,5 »). L\'ordre prénom / nom n\'a pas d\'importance.</p>'
+    + '<p class="cc-hint">📷 Feuille de notes écrite à la main ? Envoyez la photo à Claude, il vous renvoie les lignes prêtes à coller.</p>'
+    + '<textarea id="cnTexte" class="ta-big" placeholder="Fatou Ceesay 14,5&#10;Awa Jallow 12"></textarea>'
+    + '<div id="cnInfo"></div>'
+    + '<div class="actions"><button class="btn ghost" onclick="closeModal()">Annuler</button><button class="btn gold" onclick="remplirNotes()">Remplir le tableau</button></div>'
+  );
+});
+function remplirNotes(){
+  const inputs = Array.from(document.querySelectorAll("#notesGrid .note-input"));
+  const cand = inputs.map(inp => { const e = eleves.find(x => x.id === inp.dataset.eleve); return {inp, mots: e ? normNom(e.prenom+" "+e.nom).split(" ") : []}; });
+  let ok = 0; const rates = [];
+  $("cnTexte").value.split(/\r?\n/).forEach(l => {
+    l = l.trim(); if(!l) return;
+    const m = l.match(/(\d{1,2}(?:[\.,]\d{1,2})?)\s*(?:\/\s*20)?\s*$/);
+    if(!m){ rates.push(l); return; }
+    const note = Math.min(20, Math.max(0, Number(m[1].replace(",", "."))));
+    const mots = normNom(l.slice(0, m.index)).split(" ").filter(w => w.length > 1);
+    if(!mots.length){ rates.push(l); return; }
+    const trouves = cand.filter(c => mots.every(w => c.mots.includes(w)));
+    if(trouves.length !== 1){ rates.push(l); return; }
+    trouves[0].inp.value = note; trouves[0].inp.classList.add("filled");
+    if(typeof majFinale === "function" && trouves[0].inp.dataset.cc !== undefined) majFinale(trouves[0].inp);
+    ok++;
+  });
+  if(rates.length){
+    $("cnInfo").innerHTML = '<p class="login-error">'+ok+' note(s) placée(s). Non reconnu : '+rates.map(esc).join(" · ")+'</p>';
+    return;
+  }
+  closeModal();
+  toast(ok + " note(s) placée(s). Vérifiez puis touchez « Enregistrer les notes ».");
+}
+
+/* ================= POINTAGE PAR CARTE QR =================
+   Collection « pointage » : un document par passage {eleveId, cohorteId, date, heure, type: entree|sortie, ts}.
+   Premier passage du jour = entrée, le suivant = sortie, etc. */
+let pointages = [], pointageDate = "", unsubPointage = null;
+const QR_PREFIX = "DAFD:";
+function subPointage(){
+  const d = todayISO();
+  if(d === pointageDate && unsubPointage) return;
+  if(unsubPointage){ try{ unsubPointage(); }catch(e){} }
+  pointageDate = d; pointages = [];
+  unsubPointage = db.collection("pointage").where("date", "==", d).onSnapshot(s => {
+    pointages = s.docs.map(x => ({id:x.id, ...x.data()})).sort((a,b) => (a.ts||0) - (b.ts||0));
+    renderPointageDash();
+  }, err => {
+    pointageErreur = err && err.code === "permission-denied";
+    renderPointageDash();
+  });
+}
+let pointageErreur = false;
+function heureNow(){ const d = new Date(); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function renderPointageDash(){
+  const z = $("dashPointage"); if(!z) return;
+  if(pointageErreur){ z.innerHTML = '<p class="login-error">Firebase refuse le pointage : ajoutez la collection « pointage » dans les règles Firestore.</p>'; return; }
+  const parEleve = {};
+  pointages.forEach(p => { (parEleve[p.eleveId] = parEleve[p.eleveId] || []).push(p); });
+  const actifs = eleves.filter(e => e.statut === "actif");
+  const ids = Object.keys(parEleve);
+  const presents = ids.filter(id => { const l = parEleve[id]; return l[l.length-1].type === "entree"; }).length;
+  let h = '<div class="grid2"><div class="stat ok"><div class="num">'+ids.length+' / '+actifs.length+'</div><div class="lbl">Venus aujourd\'hui</div></div>'
+    + '<div class="stat"><div class="num">'+presents+'</div><div class="lbl">Encore à l\'école</div></div></div>';
+  if(ids.length){
+    h += '<div style="margin-top:10px">' + ids.map(id => {
+      const e = eleves.find(x => x.id === id); const l = parEleve[id];
+      const ent = l.filter(p => p.type === "entree").map(p => p.heure), sor = l.filter(p => p.type === "sortie").map(p => p.heure);
+      return '<div class="pt-row"><span>'+(e ? esc(e.prenom)+' '+esc(e.nom) : "—")+'</span><span><span class="pt-in">↓ '+(ent.join(", ")||"—")+'</span> &nbsp; <span class="pt-out">↑ '+(sor.join(", ")||"—")+'</span></span></div>';
+    }).join("") + '</div>';
+    const absents = actifs.filter(e => !parEleve[e.id]);
+    if(absents.length) h += '<p class="muted" style="margin-top:8px">Pas encore venus : '+absents.map(e => esc(e.prenom)+' '+esc(e.nom)).join(", ")+'</p>';
+  } else {
+    h += '<p class="muted" style="margin-top:8px">Aucun passage enregistré aujourd\'hui.</p>';
+  }
+  z.innerHTML = h;
+}
+
+/* --- Scanner (caméra de la tablette) --- */
+let scanStream = null, scanLoop = null, scanDetector = null, scanCanvas = null, scanBusy = false;
+const dernierScan = {};
+function chargerScript(src){
+  return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+}
+function bip(aigu){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); o.frequency.value = aigu ? 1180 : 660; o.connect(ctx.destination);
+    o.start(); setTimeout(() => { o.stop(); ctx.close(); }, 160);
+  }catch(e){}
+}
+function flash(cls, gros, petit){
+  const f = $("scanFlash");
+  f.className = cls || "";
+  f.innerHTML = gros ? '<span class="big">'+esc(gros)+'</span>'+esc(petit||"") : esc(petit||"");
+}
+async function ouvrirScanner(){
+  subPointage();
+  $("scanEleve").innerHTML = '<option value="">Carte oubliée ? Choisir l\'élève…</option>'
+    + eleves.filter(e => e.statut === "actif").map(e => '<option value="'+e.id+'">'+esc(e.prenom)+' '+esc(e.nom)+'</option>').join("");
+  $("scanBg").classList.add("open");
+  flash("", "", "Présentez la carte QR devant la caméra.");
+  try{
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}, audio:false});
+  }catch(err){
+    flash("warn", "Caméra indisponible", "Autorisez la caméra pour ce site, ou utilisez le choix manuel en bas.");
+    return;
+  }
+  const v = $("scanVideo"); v.srcObject = scanStream; await v.play().catch(()=>{});
+  if("BarcodeDetector" in window){
+    try{ scanDetector = new BarcodeDetector({formats:["qr_code"]}); }catch(e){ scanDetector = null; }
+  }
+  if(!scanDetector && !window.jsQR){
+    try{ await chargerScript("https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"); }
+    catch(e){ flash("warn", "Lecteur QR indisponible", "Vérifiez la connexion internet, ou utilisez le choix manuel."); return; }
+  }
+  scanCanvas = scanCanvas || document.createElement("canvas");
+  scanLoop = setInterval(lireImage, 250);
+}
+async function lireImage(){
+  if(scanBusy) return;
+  const v = $("scanVideo");
+  if(!v.videoWidth) return;
+  scanBusy = true;
+  try{
+    let texte = null;
+    if(scanDetector){
+      const r = await scanDetector.detect(v);
+      if(r && r.length) texte = r[0].rawValue;
+    } else if(window.jsQR){
+      const w = 480, h = Math.round(v.videoHeight * 480 / v.videoWidth);
+      scanCanvas.width = w; scanCanvas.height = h;
+      const ctx = scanCanvas.getContext("2d", {willReadFrequently:true});
+      ctx.drawImage(v, 0, 0, w, h);
+      const r = window.jsQR(ctx.getImageData(0,0,w,h).data, w, h, {inversionAttempts:"dontInvert"});
+      if(r) texte = r.data;
+    }
+    if(texte) await pointer(texte);
+  }catch(e){}
+  scanBusy = false;
+}
+async function pointer(texte){
+  texte = String(texte||"").trim();
+  if(!texte.startsWith(QR_PREFIX)){ flash("warn", "Carte inconnue", "Ce QR code n'est pas une carte DAFD."); bip(false); return; }
+  const id = texte.slice(QR_PREFIX.length);
+  const e = eleves.find(x => x.id === id);
+  if(!e){ flash("warn", "Élève introuvable", "Cette carte ne correspond à aucun élève."); bip(false); return; }
+  const maintenant = Date.now();
+  if(dernierScan[id] && maintenant - dernierScan[id].ts < 120000){
+    flash(dernierScan[id].type === "entree" ? "in" : "out", e.prenom+" "+e.nom, "Déjà pointé à "+dernierScan[id].heure+".");
+    return;
+  }
+  subPointage();
+  const miens = pointages.filter(p => p.eleveId === id);
+  const dernierType = dernierScan[id] && dernierScan[id].date === pointageDate ? dernierScan[id].type : (miens.length ? miens[miens.length-1].type : null);
+  const type = dernierType === "entree" ? "sortie" : "entree";
+  const heure = heureNow();
+  dernierScan[id] = {ts: maintenant, type, heure, date: pointageDate};
+  flash(type === "entree" ? "in" : "out", (type === "entree" ? "Entrée — " : "Sortie — ") + e.prenom + " " + e.nom, heure + " · " + cohorteNom(e.cohorteId));
+  bip(type === "entree");
+  try{
+    await db.collection("pointage").add({eleveId:id, cohorteId:e.cohorteId||"", date:pointageDate, heure, type, ts:maintenant, par: currentUser ? currentUser.email : ""});
+  }catch(err){
+    delete dernierScan[id];
+    flash("warn", "Non enregistré", err && err.code === "permission-denied" ? "Firebase refuse : ajoutez « pointage » dans les règles Firestore." : "Problème réseau. Réessayez.");
+  }
+}
+function fermerScanner(){
+  clearInterval(scanLoop); scanLoop = null;
+  if(scanStream){ scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  $("scanBg").classList.remove("open");
+}
+$("btnScanner").addEventListener("click", ouvrirScanner);
+$("btnScanClose").addEventListener("click", fermerScanner);
+$("btnScanManuel").addEventListener("click", () => {
+  const id = $("scanEleve").value;
+  if(!id){ toast("Choisissez un élève."); return; }
+  pointer(QR_PREFIX + id);
+  $("scanEleve").value = "";
+});
+
+/* --- Cartes QR à imprimer --- */
+async function imprimerCartesQR(){
+  const cid = $("qrCohorte").value;
+  const list = eleves.filter(e => (!cid || e.cohorteId === cid) && (e.statut === "actif" || e.statut === "preinscrit"));
+  if(!list.length){ toast("Aucun élève dans cette cohorte."); return; }
+  if(!window.qrcode){
+    try{ await chargerScript("https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"); }
+    catch(e){ toast("Problème réseau. Vérifiez votre connexion et réessayez."); return; }
+  }
+  const cartes = list.map(e => {
+    const q = window.qrcode(0, "M"); q.addData(QR_PREFIX + e.id); q.make();
+    return '<div class="qr-card"><div class="h">DAFD Académie</div><img class="qr" src="'+q.createDataURL(5, 2)+'" alt="QR">'
+      + '<div class="n">'+esc(e.prenom)+' '+esc(e.nom)+'</div><div class="c">'+esc(cohorteNom(e.cohorteId))+'</div></div>';
+  }).join("");
+  $("printArea").innerHTML = '<div class="qr-sheet">'+cartes+'</div>';
+  setTimeout(() => window.print(), 300);
+}
+$("btnCartesQR").addEventListener("click", imprimerCartesQR);
 
 /* ---------- Paramètres : matières & accès ---------- */
 $("btnSaveAdminCode").addEventListener("click", async () => {
