@@ -77,6 +77,13 @@ label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin:
 .btn.ghost{background:transparent;color:var(--indigo);border:1.5px solid var(--indigo);width:auto}
 .btn.small{width:auto;padding:8px 14px;font-size:13.5px}
 .btn.danger{background:var(--danger)}
+.pwd-wrap{position:relative}
+.pwd-wrap input{padding-right:52px}
+.pwd-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:8px;
+  background:transparent;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);cursor:pointer}
+.pwd-eye svg{width:22px;height:22px}
+.forgot{display:block;margin:14px auto 0;background:none;color:var(--indigo);font-size:14px;font-weight:600;text-decoration:underline;cursor:pointer}
+.login-ok{color:#2E7D4F;font-size:14px;margin-top:12px;text-align:center}
 .login-error{color:var(--danger);font-size:14px;margin-top:12px;text-align:center;min-height:18px}
 
 /* ---------- Shell ---------- */
@@ -342,11 +349,15 @@ td.num,th.num{text-align:right}
     <label for="loginEmail">Email</label>
     <input type="email" id="loginEmail" autocomplete="username" placeholder="votre@email.com">
     <label for="loginPwd">Mot de passe</label>
-    <input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••">
+    <div class="pwd-wrap">
+      <input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••">
+      <button type="button" class="pwd-eye" id="btnEye" aria-label="Afficher le mot de passe" title="Afficher le mot de passe"></button>
+    </div>
     <div style="margin-top:20px">
       <button class="btn gold" id="btnLogin">Se connecter</button>
     </div>
     <div class="login-error" id="loginError"></div>
+    <button type="button" class="forgot" id="btnForgot">Mot de passe oublié ?</button>
   </div>
 </div>
 
@@ -559,7 +570,8 @@ td.num,th.num{text-align:right}
         <h2>Compte</h2>
         <p class="muted" id="accountInfo"></p>
         <div style="margin-top:12px">
-          <button class="btn danger small" id="btnLogout">Se déconnecter</button>
+          <button class="btn ghost small" id="btnChangePwd">🔑 Changer mon mot de passe</button>
+          <button class="btn danger small" id="btnLogout" style="margin-left:6px">Se déconnecter</button>
         </div>
       </div>
     </section>
@@ -675,7 +687,7 @@ function statutLabel(s){
    textes connus. Le choix est mémorisé sur l'appareil. */
 let LANG = localStorage.getItem("dafd_lang") || "fr";
 const DICO_EN = {
-  "DAFD Académie":"DAFD Academy","Directeur":"Director","Manager":"Manager","+ Enregistrer un paiement":"+ Record a payment","+ Enregistrer une dépense":"+ Record an expense","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Autres":"Other","Loyer":"Rent","Salaires":"Salaries","Transport":"Transport","Électricité & eau":"Electricity & water","Internet & téléphone":"Internet & phone","Matériel & tissus":"Materials & fabrics","Modifier la cohorte":"Edit cohort","Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu.":"Suggested amount = what is left. For an advance, enter the amount received.","📷 Ajouter la photo":"📷 Add photo","Moy.":"Avg.","Email":"Email","Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d'atelier (onglet « Notes du trimestre »).":"These marks count for 40% in the pattern drafting, sewing and workshop practice subjects (“Term grades” tab).","Contrôle continu couture":"Coursework, sewing","Contrôle continu patronage":"Coursework, pattern drafting","Contrôle continu du trimestre, sur 20":"Term coursework, out of 20","Moyenne de chaque semaine, sur 10":"Weekly average, out of 10","Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d'examen compte seule.":"Final mark = 40% coursework (daily marks) + 60% exam. Without daily marks, the exam mark counts alone.","Pièce complète aujourd'hui (compte double)":"Complete garment today (counts double)","Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.":"For each student, 0, 1 or 2 marks per criterion. Total out of 10. Tap a value again to clear it.","Pratique d'atelier":"Workshop practice","Cohorte":"Cohort","Contrôle continu /20":"Coursework /20","Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.":"The emails listed here can see the finances. Other accounts (manager, teachers) only see students and grades. One email per line.","Patronage / Coupe à plat":"Pattern drafting / Flat cutting","Couture & Montage":"Sewing & Construction","Dessin de mode / Stylisme":"Fashion drawing / Design","Technologie des textiles":"Textile technology","Moulage / Drapé":"Draping","Tenues traditionnelles africaines":"Traditional African garments","Histoire de la mode":"Fashion history","Gestion d'atelier":"Workshop management","Choisissez une cohorte et une date.":"Choose a cohort and a date.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Choisissez une cohorte.":"Choose a cohort.","Pas encore de notes du jour pour ce trimestre.":"No daily marks for this term yet.","Pas encore de notes du jour ce trimestre.":"No daily marks this term yet.","À voir en entretien":"Needs a follow-up talk","Présence":"Attendance","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Accès enregistrés ✓ (effet à la prochaine connexion)":"Access saved ✓ (applies at next sign-in)","Accès refusé par Firebase : autorisez la collection « suivi » dans les règles.":"Access denied by Firebase: allow the “suivi” collection in the rules.","Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?":"Warning: your own email is not in the list. You will lose access to the finances. Continue?","Aucune note à enregistrer.":"No marks to save.","Choisissez la date du paiement.":"Choose the payment date.","Choisissez un élève.":"Choose a student.","Choisissez une image.":"Choose an image.","Code actuel incorrect.":"Current code incorrect.","Code de sécurité changé ✓":"Security code changed ✓","Code incorrect. Suppression annulée.":"Wrong code. Deletion cancelled.","Cohorte enregistrée ✓":"Cohort saved ✓","Cohorte supprimée":"Cohort deleted","Connexion…":"Signing in…","Créez d'abord une cohorte (onglet Plus).":"Create a cohort first (More tab).","Dépense supprimée":"Expense deleted","Entrez au moins un nom.":"Enter at least one name.","Entrez au moins une matière.":"Enter at least one subject.","Entrez un libellé.":"Enter a description.","Entrez un montant valide.":"Enter a valid amount.","Entrez un nom de cohorte.":"Enter a cohort name.","Entrez votre email et votre mot de passe.":"Enter your email and password.","Erreur d'enregistrement des notes.":"Error saving grades.","Erreur d'enregistrement des tarifs.":"Error saving rates.","Erreur d'enregistrement du paiement.":"Error saving the payment.","Erreur d'enregistrement.":"Error while saving.","Erreur d'enregistrement. Réessayez.":"Error while saving. Try again.","Erreur de lecture du fichier.":"Error reading the file.","Erreur lors de la suppression.":"Error while deleting.","Il faut au moins un email directeur.":"At least one director email is required.","Impossible de lire cette image.":"Cannot read this image.","Le nouveau code doit avoir au moins 4 caractères.":"The new code must have at least 4 characters.","Matières enregistrées ✓":"Subjects saved ✓","Paiement supprimé":"Payment deleted","Pas de numéro WhatsApp pour cet élève.":"No WhatsApp number for this student.","Photo ajoutée ✓":"Photo added ✓","Seul le directeur peut supprimer un paiement.":"Only the director can delete a payment.","Seul le directeur peut supprimer une dépense.":"Only the director can delete an expense.","Supprimer ce paiement ?":"Delete this payment?","Supprimer cette cohorte ?":"Delete this cohort?","Supprimer cette dépense ?":"Delete this expense?","Tarifs enregistrés ✓":"Rates saved ✓","Tout est déjà payé ✓":"Everything is already paid ✓","Élève enregistré ✓":"Student saved ✓","Élève supprimé":"Student deleted","🔐 Code de sécurité administrateur :":"🔐 Administrator security code:","🔐 Entrez d'abord le code actuel :":"🔐 First enter the current code:","🔒 Réservé au directeur.":"🔒 Director only.","🔒 Seul le directeur peut modifier une fiche élève.":"🔒 Only the director can edit a student record.","🔒 Seul le directeur peut supprimer un élève.":"🔒 Only the director can delete a student.","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt","Fermer sans envoyer":"Close without sending","Ajouter":"Add","Connexion impossible. Vérifiez email et mot de passe.":"Cannot sign in. Check your email and password.","Problème réseau. Vérifiez votre connexion et réessayez.":"Network problem. Check your connection and try again.","Trop d'essais. Attendez quelques minutes puis réessayez.":"Too many attempts. Wait a few minutes and try again.","votre@email.com":"your@email.com",
+  "DAFD Académie":"DAFD Academy","Directeur":"Director","Manager":"Manager","+ Enregistrer un paiement":"+ Record a payment","+ Enregistrer une dépense":"+ Record an expense","Mesures et tracé":"Measuring and drafting","Coupe et placement":"Layout and cutting","Coutures et montage":"Seams and assembly","Finitions et repassage":"Finishing and pressing","Tenue au poste":"Workstation conduct","Autres":"Other","Loyer":"Rent","Salaires":"Salaries","Transport":"Transport","Électricité & eau":"Electricity & water","Internet & téléphone":"Internet & phone","Matériel & tissus":"Materials & fabrics","Modifier la cohorte":"Edit cohort","Montant proposé = ce qui reste. Pour une avance, écrivez le montant reçu.":"Suggested amount = what is left. For an advance, enter the amount received.","📷 Ajouter la photo":"📷 Add photo","Moy.":"Avg.","Email":"Email","Ces notes comptent pour 40 % dans les matières de patronage, de couture et de pratique d'atelier (onglet « Notes du trimestre »).":"These marks count for 40% in the pattern drafting, sewing and workshop practice subjects (“Term grades” tab).","Contrôle continu couture":"Coursework, sewing","Contrôle continu patronage":"Coursework, pattern drafting","Contrôle continu du trimestre, sur 20":"Term coursework, out of 20","Moyenne de chaque semaine, sur 10":"Weekly average, out of 10","Note finale = 40 % contrôle continu (notes du jour) + 60 % examen. Sans notes du jour, la note d'examen compte seule.":"Final mark = 40% coursework (daily marks) + 60% exam. Without daily marks, the exam mark counts alone.","Pièce complète aujourd'hui (compte double)":"Complete garment today (counts double)","Pour chaque élève, 0, 1 ou 2 points par critère. Total sur 10. Touchez une valeur une deuxième fois pour l'effacer.":"For each student, 0, 1 or 2 marks per criterion. Total out of 10. Tap a value again to clear it.","Pratique d'atelier":"Workshop practice","Cohorte":"Cohort","Contrôle continu /20":"Coursework /20","Les emails listés ici voient les finances. Les autres comptes (manager, professeurs) voient uniquement élèves et notes. Un email par ligne.":"The emails listed here can see the finances. Other accounts (manager, teachers) only see students and grades. One email per line.","Patronage / Coupe à plat":"Pattern drafting / Flat cutting","Couture & Montage":"Sewing & Construction","Dessin de mode / Stylisme":"Fashion drawing / Design","Technologie des textiles":"Textile technology","Moulage / Drapé":"Draping","Tenues traditionnelles africaines":"Traditional African garments","Histoire de la mode":"Fashion history","Gestion d'atelier":"Workshop management","Choisissez une cohorte et une date.":"Choose a cohort and a date.","Aucun élève actif dans cette cohorte.":"No active student in this cohort.","Choisissez une cohorte.":"Choose a cohort.","Pas encore de notes du jour pour ce trimestre.":"No daily marks for this term yet.","Pas encore de notes du jour ce trimestre.":"No daily marks this term yet.","À voir en entretien":"Needs a follow-up talk","Présence":"Attendance","Patronage":"Pattern drafting","Couture":"Sewing","Atelier":"Workshop","Accès enregistrés ✓ (effet à la prochaine connexion)":"Access saved ✓ (applies at next sign-in)","Accès refusé par Firebase : autorisez la collection « suivi » dans les règles.":"Access denied by Firebase: allow the “suivi” collection in the rules.","Attention : votre propre email n'est pas dans la liste. Vous perdrez l'accès aux finances. Continuer ?":"Warning: your own email is not in the list. You will lose access to the finances. Continue?","Aucune note à enregistrer.":"No marks to save.","Choisissez la date du paiement.":"Choose the payment date.","Choisissez un élève.":"Choose a student.","Choisissez une image.":"Choose an image.","Code actuel incorrect.":"Current code incorrect.","Code de sécurité changé ✓":"Security code changed ✓","Code incorrect. Suppression annulée.":"Wrong code. Deletion cancelled.","Cohorte enregistrée ✓":"Cohort saved ✓","Cohorte supprimée":"Cohort deleted","Connexion…":"Signing in…","Créez d'abord une cohorte (onglet Plus).":"Create a cohort first (More tab).","Dépense supprimée":"Expense deleted","Entrez au moins un nom.":"Enter at least one name.","Entrez au moins une matière.":"Enter at least one subject.","Entrez un libellé.":"Enter a description.","Entrez un montant valide.":"Enter a valid amount.","Entrez un nom de cohorte.":"Enter a cohort name.","Entrez votre email et votre mot de passe.":"Enter your email and password.","Erreur d'enregistrement des notes.":"Error saving grades.","Erreur d'enregistrement des tarifs.":"Error saving rates.","Erreur d'enregistrement du paiement.":"Error saving the payment.","Erreur d'enregistrement.":"Error while saving.","Erreur d'enregistrement. Réessayez.":"Error while saving. Try again.","Erreur de lecture du fichier.":"Error reading the file.","Erreur lors de la suppression.":"Error while deleting.","Il faut au moins un email directeur.":"At least one director email is required.","Impossible de lire cette image.":"Cannot read this image.","Le nouveau code doit avoir au moins 4 caractères.":"The new code must have at least 4 characters.","Matières enregistrées ✓":"Subjects saved ✓","Paiement supprimé":"Payment deleted","Pas de numéro WhatsApp pour cet élève.":"No WhatsApp number for this student.","Photo ajoutée ✓":"Photo added ✓","Seul le directeur peut supprimer un paiement.":"Only the director can delete a payment.","Seul le directeur peut supprimer une dépense.":"Only the director can delete an expense.","Supprimer ce paiement ?":"Delete this payment?","Supprimer cette cohorte ?":"Delete this cohort?","Supprimer cette dépense ?":"Delete this expense?","Tarifs enregistrés ✓":"Rates saved ✓","Tout est déjà payé ✓":"Everything is already paid ✓","Élève enregistré ✓":"Student saved ✓","Élève supprimé":"Student deleted","🔐 Code de sécurité administrateur :":"🔐 Administrator security code:","🔐 Entrez d'abord le code actuel :":"🔐 First enter the current code:","🔒 Réservé au directeur.":"🔒 Director only.","🔒 Seul le directeur peut modifier une fiche élève.":"🔒 Only the director can edit a student record.","🔒 Seul le directeur peut supprimer un élève.":"🔒 Only the director can delete a student.","Paiement enregistré ✓":"Payment recorded ✓","📲 Envoyer le reçu WhatsApp":"📲 Send WhatsApp receipt","Fermer sans envoyer":"Close without sending","Ajouter":"Add","Connexion impossible. Vérifiez email et mot de passe.":"Cannot sign in. Check your email and password.","Problème réseau. Vérifiez votre connexion et réessayez.":"Network problem. Check your connection and try again.","Trop d'essais. Attendez quelques minutes puis réessayez.":"Too many attempts. Wait a few minutes and try again.","votre@email.com":"your@email.com","Mot de passe oublié ?":"Forgot password?","🔑 Changer mon mot de passe":"🔑 Change my password","Afficher le mot de passe":"Show password","Masquer le mot de passe":"Hide password","Écrivez d'abord votre email ci-dessus, puis touchez « Mot de passe oublié ? ».":"First type your email above, then tap “Forgot password?”.","Envoi impossible. Vérifiez l'email et réessayez.":"Could not send. Check the email and try again.","Envoi impossible. Réessayez plus tard.":"Could not send. Try again later.","Connexion impossible. Vérifiez email et mot de passe. (Code oublié ? Touchez « Mot de passe oublié ? » ci-dessous.)":"Cannot sign in. Check your email and password. (Forgot it? Tap “Forgot password?” below.)","Accès non vérifié (réseau). Déconnectez-vous puis reconnectez-vous.":"Access not verified (network). Log out and sign in again.",
   "Gestion scolaire":"School management","Tableau":"Dashboard","Élèves":"Students","Notes":"Grades","Finances":"Finances","Plus":"More",
   "Cohortes en cours":"Current cohorts","Finances du mois":"This month's finances","Frais en retard":"Overdue fees","Élèves actifs":"Active students","Préinscrits 2026-27":"Pre-enrolled 2026-27","Abandons":"Dropouts","Diplômés":"Graduates","Actifs":"Active",
   "Encaissements":"Income","Dépenses":"Expenses","Solde du mois":"Month balance","Tous les frais sont à jour 🎉":"All fees are up to date 🎉","Élèves en retard":"Students overdue",
@@ -722,6 +734,9 @@ const RX_EN = [
   [/^Encaissé \((\d+)\)$/, (m,a)=>"Collected ("+a+")"],
   [/^Dépensé \((\d+)\)$/, (m,a)=>"Spent ("+a+")"],
   [/^Ex : (.+)$/, (m,a)=>"E.g.: "+a],
+  [/^Si un compte existe pour (\S+), un lien vient d'être envoyé\. Regardez aussi dans « Spam » \(jusqu'à 10 minutes\)\.$/, (m,a)=>"If an account exists for "+a+", a link has just been sent. Also check “Spam” (up to 10 minutes)."],
+  [/^Lien envoyé à (\S+) ✓$/, (m,a)=>"Link sent to "+a+" ✓"],
+  [/^Un lien pour choisir un nouveau mot de passe va être envoyé à (\S+)\. Continuer \?$/, (m,a)=>"A link to choose a new password will be sent to "+a+". Continue?"],
   [/^(\d)\. (.+)$/, (m,a,b)=>DICO_EN[b] !== undefined ? a+". "+DICO_EN[b] : m],
   [/^Paiement de (.+) enregistré ✓$/, (m,a)=>"Payment of "+a+" recorded ✓"],
   [/^Impossible : (\d+) élève\(s\) dans cette cohorte\.$/, (m,a)=>"Not possible: "+a+" student(s) in this cohort."],
@@ -898,7 +913,11 @@ function situationEleve(e, extra){
     if(p.poste && postes.some(x => x.k === p.poste)) par[p.poste] = (par[p.poste] || 0) + m;
     else libre += m;
   });
-  postes.forEach(x => { x.paye = par[x.k] || 0; });
+  postes.forEach(x => {
+    x.paye = par[x.k] || 0;
+    /* Trop-perçu sur un poste : l'excédent devient un avoir libre */
+    if(x.paye > x.montant && x.montant > 0){ libre += x.paye - x.montant; x.paye = x.montant; }
+  });
   /* Versements sans poste (anciens paiements, avances libres) : ils comblent,
      dans l'ordre, les postes déjà dus qui ne sont pas soldés. */
   postes.forEach(x => {
@@ -961,18 +980,66 @@ function relancer(eleveId){
 
 /* ---------- Authentification ---------- */
 $("btnLogin").addEventListener("click", doLogin);
+auth.languageCode = "fr";
+
+/* Œil : afficher / masquer le mot de passe */
+const SVG_OEIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const SVG_OEIL_BARRE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function majOeil(){
+  const visible = $("loginPwd").type === "text";
+  $("btnEye").innerHTML = visible ? SVG_OEIL_BARRE : SVG_OEIL;
+  const lib = visible ? "Masquer le mot de passe" : "Afficher le mot de passe";
+  $("btnEye").setAttribute("aria-label", lib);
+  $("btnEye").setAttribute("title", lib);
+}
+$("btnEye").addEventListener("click", () => {
+  const inp = $("loginPwd");
+  inp.type = inp.type === "password" ? "text" : "password";
+  majOeil();
+  inp.focus();
+});
+majOeil();
+
+/* Mot de passe oublié : Firebase envoie un lien de réinitialisation par email */
+async function envoyerLienReset(email){
+  auth.languageCode = LANG === "en" ? "en" : "fr";
+  await auth.sendPasswordResetEmail(email);
+}
+$("btnForgot").addEventListener("click", async () => {
+  const email = $("loginEmail").value.trim();
+  $("loginError").className = "login-error";
+  if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+    $("loginError").textContent = "Écrivez d'abord votre email ci-dessus, puis touchez « Mot de passe oublié ? ».";
+    $("loginEmail").focus();
+    return;
+  }
+  $("btnForgot").disabled = true;
+  try{
+    await envoyerLienReset(email);
+    $("loginError").className = "login-ok";
+    $("loginError").textContent = "Si un compte existe pour " + email + ", un lien vient d'être envoyé. Regardez aussi dans « Spam » (jusqu'à 10 minutes).";
+  }catch(err){
+    let msg = "Envoi impossible. Vérifiez l'email et réessayez.";
+    if(err && err.code === "auth/network-request-failed") msg = "Problème réseau. Vérifiez votre connexion et réessayez.";
+    if(err && err.code === "auth/too-many-requests") msg = "Trop d'essais. Attendez quelques minutes puis réessayez.";
+    if(err && err.code === "auth/user-not-found"){ $("loginError").className = "login-ok"; msg = "Si un compte existe pour " + email + ", un lien vient d'être envoyé. Regardez aussi dans « Spam » (jusqu'à 10 minutes)."; }
+    $("loginError").textContent = msg;
+  }
+  setTimeout(() => { $("btnForgot").disabled = false; }, 30000);
+});
 $("loginPwd").addEventListener("keydown", e => { if(e.key === "Enter") doLogin(); });
 
 async function doLogin(){
   const email = $("loginEmail").value.trim();
   const pwd = $("loginPwd").value;
   $("loginError").textContent = "";
+  $("loginError").className = "login-error";
   if(!email || !pwd){ $("loginError").textContent = "Entrez votre email et votre mot de passe."; return; }
   $("btnLogin").textContent = "Connexion…";
   try{
     await auth.signInWithEmailAndPassword(email, pwd);
   }catch(err){
-    let msg = "Connexion impossible. Vérifiez email et mot de passe.";
+    let msg = "Connexion impossible. Vérifiez email et mot de passe. (Code oublié ? Touchez « Mot de passe oublié ? » ci-dessous.)";
     if(err && err.code === "auth/network-request-failed") msg = "Problème réseau. Vérifiez votre connexion et réessayez.";
     if(err && (err.code === "auth/too-many-requests")) msg = "Trop d'essais. Attendez quelques minutes puis réessayez.";
     $("loginError").textContent = msg;
@@ -1012,6 +1079,7 @@ async function resolveRole(){
     }
   }catch(e){
     directeurs = [];
+    setTimeout(() => toast("Accès non vérifié (réseau). Déconnectez-vous puis reconnectez-vous."), 800);
   }
   role = directeurs.includes((currentUser.email||"").toLowerCase()) ? "directeur" : "manager";
 }
@@ -1027,6 +1095,13 @@ function applyRoleUI(){
 }
 
 $("btnLogout").addEventListener("click", () => auth.signOut());
+$("btnChangePwd").addEventListener("click", async () => {
+  const email = currentUser && currentUser.email;
+  if(!email) return;
+  if(!confirm("Un lien pour choisir un nouveau mot de passe va être envoyé à " + email + ". Continuer ?")) return;
+  try{ await envoyerLienReset(email); toast("Lien envoyé à " + email + " ✓"); }
+  catch(err){ toast("Envoi impossible. Réessayez plus tard."); }
+});
 
 /* ---------- Abonnements Firestore ---------- */
 function startData(){
